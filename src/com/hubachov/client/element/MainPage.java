@@ -13,19 +13,16 @@ import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
 import com.extjs.gxt.ui.client.widget.grid.Grid;
 import com.extjs.gxt.ui.client.widget.layout.BorderLayout;
 import com.extjs.gxt.ui.client.widget.layout.BorderLayoutData;
-import com.extjs.gxt.ui.client.widget.layout.FitLayout;
-import com.extjs.gxt.ui.client.widget.toolbar.PagingToolBar;
 import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.hubachov.client.model.Role;
+import com.hubachov.client.element.table.RoleTable;
 import com.hubachov.client.model.User;
 import com.hubachov.client.service.RoleServiceAsync;
 import com.hubachov.client.service.UserServiceAsync;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class MainPage extends LayoutContainer {
     private UserServiceAsync userServiceAsync;
@@ -73,6 +70,7 @@ public class MainPage extends LayoutContainer {
                         userServiceAsync.getUsers((BaseListLoadConfig) loadConfig, callback);
                     }
                 };
+
                 final BaseListLoader<ListLoadResult<User>> loader = new BaseListLoader<ListLoadResult<User>>(proxy);
                 ListStore<User> listStore = new ListStore<User>(loader);
                 ColumnModel cm = new ColumnModel(configs);
@@ -98,60 +96,9 @@ public class MainPage extends LayoutContainer {
 
         Button roles = new Button("Roles", new SelectionListener<ButtonEvent>() {
             @Override
-            public void componentSelected(ButtonEvent ce) {
-                RpcProxy<PagingLoadResult<Role>> proxy = new RpcProxy<PagingLoadResult<Role>>() {
-                    @Override
-                    protected void load(Object loadConfig, AsyncCallback<PagingLoadResult<Role>> callback) {
-                        roleServiceAsync.getAll((PagingLoadConfig) loadConfig, callback);
-                    }
-                };
-                final PagingLoader<PagingLoadResult<Role>> loader = new BasePagingLoader<PagingLoadResult<Role>>(proxy);
-                loader.setRemoteSort(true);
-                ListStore<Role> list = new ListStore<Role>(loader);
-                final PagingToolBar toolBar = new PagingToolBar(3);
-                toolBar.bind(loader);
-                List<ColumnConfig> configs = new ArrayList<ColumnConfig>();
-                configs.add(new ColumnConfig("id", "Id", 30));
-                configs.add(new ColumnConfig("name", "Name", 100));
-                ColumnModel cm = new ColumnModel(configs);
-                final Grid<Role> grid = new Grid<Role>(list, cm);
-                grid.setStateId("pagingGridExample");
-                grid.setStateful(true);
-                grid.addListener(Events.Attach, new Listener<GridEvent<Role>>() {
-                    public void handleEvent(GridEvent<Role> be) {
-                        PagingLoadConfig config = new BasePagingLoadConfig();
-                        config.setOffset(0);
-                        config.setLimit(3);
-                        Map<String, Object> state = grid.getState();
-                        if (state.containsKey("offset")) {
-                            int offset = (Integer) state.get("offset");
-                            int limit = (Integer) state.get("limit");
-                            config.setOffset(offset);
-                            config.setLimit(limit);
-                        }
-                        if (state.containsKey("sortField")) {
-                            config.setSortField((String) state.get("sortField"));
-                            config.setSortDir(Style.SortDir.valueOf((String) state
-                                    .get("sortDir")));
-                        }
-                        loader.load(config);
-                    }
-                });
-                grid.setLoadMask(true);
-                grid.setBorders(true);
-                grid.setAutoExpandColumn("comments");
-                grid.setStyleAttribute("borderTop", "none");
-                grid.setStripeRows(true);
-                ContentPanel cp = new ContentPanel();
-                cp.setBodyBorder(false);
-                cp.setHeading("Grid with Pagination");
-                cp.setButtonAlign(Style.HorizontalAlignment.CENTER);
-                cp.setLayout(new FitLayout());
-                cp.setSize(700, 300);
-                cp.add(grid);
-                cp.setBottomComponent(toolBar);
+            public void componentSelected(ButtonEvent buttonEvent) {
                 center.removeAll();
-                center.add(cp);
+                center.add(new RoleTable(roleServiceAsync));
                 center.layout(true);
             }
         });

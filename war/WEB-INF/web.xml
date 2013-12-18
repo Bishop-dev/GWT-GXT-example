@@ -8,9 +8,18 @@
         <servlet-name>com.hubachov.TaskEntryPoint UserService</servlet-name>
         <servlet-class>com.hubachov.server.UserServiceImpl</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>com.hubachov.TaskEntryPoint RoleService</servlet-name>
+        <servlet-class>com.hubachov.server.RoleServiceImpl</servlet-class>
+    </servlet>
+
     <servlet-mapping>
         <servlet-name>com.hubachov.TaskEntryPoint UserService</servlet-name>
         <url-pattern>/TaskGWT/UserService</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>com.hubachov.TaskEntryPoint RoleService</servlet-name>
+        <url-pattern>/TaskGWT/RoleService</url-pattern>
     </servlet-mapping>
 
     <welcome-file-list>
