@@ -1,11 +1,15 @@
 package com.hubachov.client.element.table;
 
 import com.extjs.gxt.ui.client.data.*;
+import com.extjs.gxt.ui.client.event.ComponentEvent;
+import com.extjs.gxt.ui.client.event.Events;
+import com.extjs.gxt.ui.client.event.Listener;
 import com.extjs.gxt.ui.client.store.ListStore;
 import com.extjs.gxt.ui.client.widget.LayoutContainer;
 import com.extjs.gxt.ui.client.widget.grid.ColumnConfig;
 import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
 import com.extjs.gxt.ui.client.widget.grid.Grid;
+import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.hubachov.client.model.User;
 import com.hubachov.client.service.UserServiceAsync;
@@ -22,7 +26,7 @@ public class UserTable extends LayoutContainer {
 
     @Override
     protected void onAttach() {
-        List<ColumnConfig> configs = new ArrayList<ColumnConfig>();
+        final List<ColumnConfig> configs = new ArrayList<ColumnConfig>();
         configs.add(new ColumnConfig("id", "Id", 30));
         configs.add(new ColumnConfig("login", "Login", 100));
         configs.add(new ColumnConfig("email", "Email", 100));
@@ -38,11 +42,24 @@ public class UserTable extends LayoutContainer {
             }
         };
 
-        BaseListLoader<ListLoadResult<ModelData>> loader = new BaseListLoader<ListLoadResult<ModelData>>(proxy);
+        final BaseListLoader<ListLoadResult<User>> loader = new BaseListLoader<ListLoadResult<User>>(proxy);
         ListStore<User> listStore = new ListStore<User>(loader);
         ColumnModel cm = new ColumnModel(configs);
         Grid<User> grid = new Grid<User>(listStore, cm);
         grid.setStripeRows(true);
+        grid.addListener(Events.Attach, new Listener<ComponentEvent>() {
+            @Override
+            public void handleEvent(ComponentEvent be) {
+                Scheduler.get().scheduleDeferred(new Scheduler.ScheduledCommand() {
+                    @Override
+                    public void execute() {
+                        loader.load(new BaseListLoadConfig());
+                    }
+                });
+            }
+        });
+        grid.setHeight(300);
+        grid.getView().setAutoFill(true);
         add(grid);
     }
 }

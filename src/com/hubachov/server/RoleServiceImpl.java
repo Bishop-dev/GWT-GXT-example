@@ -9,6 +9,8 @@ import com.hubachov.dao.RoleDAO;
 import com.hubachov.dao.impl.jdbc.RoleDAOJDBC;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class RoleServiceImpl extends RemoteServiceServlet implements RoleService {
@@ -17,6 +19,18 @@ public class RoleServiceImpl extends RemoteServiceServlet implements RoleService
     @Override
     public BasePagingLoadResult<Role> getRoles(BasePagingLoadConfig config) throws Exception {
         List<Role> roles = dao.findAll();
+        if (config.getSortInfo().getSortField() != null) {
+            final String sortField = config.getSortInfo().getSortField();
+            Collections.sort(roles, new Comparator<Role>() {
+                @Override
+                public int compare(Role role1, Role role2) {
+                    if (sortField.equals("name")) {
+                        return role1.getName().compareTo(role2.getName());
+                    }
+                    return (int) (role1.getId() - role2.getId());
+                }
+            });
+        }
         int start = config.getOffset();
         int limit = roles.size();
         if (config.getLimit() > 0) {
@@ -26,6 +40,6 @@ public class RoleServiceImpl extends RemoteServiceServlet implements RoleService
         for (int i = start; i < limit; i++) {
             result.add(roles.get(i));
         }
-        return new BasePagingLoadResult<Role>(result);
+        return new BasePagingLoadResult<Role>(result, start, roles.size());
     }
 }

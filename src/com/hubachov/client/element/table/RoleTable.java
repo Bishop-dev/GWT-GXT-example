@@ -2,12 +2,9 @@ package com.hubachov.client.element.table;
 
 import com.extjs.gxt.ui.client.Style;
 import com.extjs.gxt.ui.client.data.*;
-import com.extjs.gxt.ui.client.event.ComponentEvent;
-import com.extjs.gxt.ui.client.event.Events;
-import com.extjs.gxt.ui.client.event.Listener;
+import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
 import com.extjs.gxt.ui.client.widget.ContentPanel;
-import com.extjs.gxt.ui.client.widget.Info;
 import com.extjs.gxt.ui.client.widget.LayoutContainer;
 import com.extjs.gxt.ui.client.widget.grid.ColumnConfig;
 import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
@@ -43,9 +40,13 @@ public class RoleTable extends LayoutContainer {
         };
         final PagingLoader<PagingLoadResult<Role>> loader = new BasePagingLoader<PagingLoadResult<Role>>(proxy);
         loader.setRemoteSort(true);
+        loader.setSortField("id");
+        loader.setSortDir(Style.SortDir.ASC);
         ListStore<Role> listStore = new ListStore<Role>(loader);
-        PagingToolBar toolBar = new PagingToolBar(50);
+        PagingToolBar toolBar = new PagingToolBar(5);
         toolBar.bind(loader);
+
+        toolBar.setStateful(true);
         List<ColumnConfig> columnConfigList = new ArrayList<ColumnConfig>();
         columnConfigList.add(new ColumnConfig("id", "Id", 30));
         columnConfigList.add(new ColumnConfig("name", "Name", 100));
@@ -53,15 +54,15 @@ public class RoleTable extends LayoutContainer {
         final Grid<Role> grid = new Grid<Role>(listStore, columnModel);
         grid.setStateId("roleGrid");
         grid.setStateful(true);
-        grid.addListener(Events.Attach, new Listener<ComponentEvent>() {
+        grid.addListener(Events.Attach, new Listener<GridEvent<Role>>() {
             @Override
-            public void handleEvent(ComponentEvent baseEvent) {
+            public void handleEvent(GridEvent<Role> baseEvent) {
                 Scheduler.get().scheduleDeferred(new Scheduler.ScheduledCommand() {
                     @Override
                     public void execute() {
                         PagingLoadConfig config = new BasePagingLoadConfig();
                         config.setOffset(0);
-                        config.setLimit(2);
+                        config.setLimit(10);
                         Map<String, Object> state = grid.getState();
                         if (state.containsKey("offset")) {
                             int offset = (Integer) state.get("offset");
@@ -73,7 +74,7 @@ public class RoleTable extends LayoutContainer {
                             config.setSortField((String) state.get("sortField"));
                             config.setSortDir(Style.SortDir.valueOf((String) state.get("sortDir")));
                         }
-                        loader.load(new BaseListLoadConfig());
+                        loader.load(config);
                     }
                 });
             }
@@ -89,6 +90,7 @@ public class RoleTable extends LayoutContainer {
         panel.setSize(600, 350);
         panel.setBottomComponent(toolBar);
         grid.getAriaSupport().setLabelledBy(panel.getId());
+        //default loading
         loader.load();
         add(panel);
     }
