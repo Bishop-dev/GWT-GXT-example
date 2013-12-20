@@ -6,6 +6,9 @@ import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
 import com.extjs.gxt.ui.client.widget.ContentPanel;
 import com.extjs.gxt.ui.client.widget.LayoutContainer;
+import com.extjs.gxt.ui.client.widget.button.Button;
+import com.extjs.gxt.ui.client.widget.form.TextField;
+import com.extjs.gxt.ui.client.widget.grid.CellEditor;
 import com.extjs.gxt.ui.client.widget.grid.ColumnConfig;
 import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
 import com.extjs.gxt.ui.client.widget.grid.Grid;
@@ -22,14 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 public class RoleTable extends LayoutContainer {
-    private RoleServiceAsync roleServiceAsync;
 
-    public RoleTable(RoleServiceAsync roleServiceAsync) {
-        this.roleServiceAsync = roleServiceAsync;
-    }
-
-    @Override
-    protected void onAttach() {
+    public RoleTable(final RoleServiceAsync roleServiceAsync) {
         FlowLayout flowLayout = new FlowLayout(10);
         setLayout(flowLayout);
         RpcProxy<BasePagingLoadResult<Role>> proxy = new RpcProxy<BasePagingLoadResult<Role>>() {
@@ -45,11 +42,13 @@ public class RoleTable extends LayoutContainer {
         ListStore<Role> listStore = new ListStore<Role>(loader);
         PagingToolBar toolBar = new PagingToolBar(5);
         toolBar.bind(loader);
-
-        toolBar.setStateful(true);
         List<ColumnConfig> columnConfigList = new ArrayList<ColumnConfig>();
         columnConfigList.add(new ColumnConfig("id", "Id", 30));
-        columnConfigList.add(new ColumnConfig("name", "Name", 100));
+        ColumnConfig nameColumnConfig = new ColumnConfig("name", "Name", 100);
+        columnConfigList.add(nameColumnConfig);
+        TextField<String> field = new TextField<String>();
+        field.setAllowBlank(false);
+        nameColumnConfig.setEditor(new CellEditor(field));
         ColumnModel columnModel = new ColumnModel(columnConfigList);
         final Grid<Role> grid = new Grid<Role>(listStore, columnModel);
         grid.setStateId("roleGrid");
@@ -81,6 +80,7 @@ public class RoleTable extends LayoutContainer {
         });
         grid.setLoadMask(true);
         grid.setBorders(true);
+        grid.setSize(600, 350);
         ContentPanel panel = new ContentPanel();
         panel.setFrame(true);
         panel.setCollapsible(true);
@@ -90,8 +90,7 @@ public class RoleTable extends LayoutContainer {
         panel.setSize(600, 350);
         panel.setBottomComponent(toolBar);
         grid.getAriaSupport().setLabelledBy(panel.getId());
-        //default loading
-        loader.load();
         add(panel);
     }
+
 }
