@@ -75,7 +75,7 @@
             <classes dir="build" includes="**/*.class"/>
             <fileset dir="war/TaskGWT"/>
             <webinf dir="war/WEB-INF/">
-                <include name="classes/${server.resources.name}/**"/>
+                <include name="classes/log4j.properties"/>
                 <include name="**/*.jar"/>
                 <exclude name="**/gwt-dev-windows.jar"/>
                 <exclude name="**/gwt-user.jar"/>
