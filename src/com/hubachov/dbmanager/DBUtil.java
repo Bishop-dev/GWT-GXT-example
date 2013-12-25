@@ -56,8 +56,8 @@ public class DBUtil {
     public synchronized void initPool() {
         Properties properties = new Properties();
         try {
-            properties
-                    .load(DBUtil.class.getResource(propertyFile).openStream());
+//            properties
+//                    .load(DBUtil.class.getResource(propertyFile).openStream());
         } catch (Exception e) {
             log.error("Properties file read error", e);
         }
@@ -68,7 +68,7 @@ public class DBUtil {
         }
         GenericObjectPool pool = new GenericObjectPool();
         pool.setMaxActive(10);
-        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:h2:tcp://10.10.1.237/~/userdb",
+        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:h2:tcp://10.11.60.15/~/userdb",
                 "user", "pswd");
         PoolableConnectionFactory poolableFactory = new PoolableConnectionFactory(
                 connectionFactory, pool, null, null, false, true);

@@ -6,12 +6,12 @@ import com.extjs.gxt.ui.client.event.Events;
 import com.extjs.gxt.ui.client.event.GridEvent;
 import com.extjs.gxt.ui.client.event.Listener;
 import com.extjs.gxt.ui.client.store.ListStore;
+import com.extjs.gxt.ui.client.store.StoreEvent;
+import com.extjs.gxt.ui.client.store.StoreListener;
 import com.extjs.gxt.ui.client.widget.ContentPanel;
+import com.extjs.gxt.ui.client.widget.Info;
 import com.extjs.gxt.ui.client.widget.LayoutContainer;
-import com.extjs.gxt.ui.client.widget.button.Button;
-import com.extjs.gxt.ui.client.widget.form.ComboBox;
-import com.extjs.gxt.ui.client.widget.form.SimpleComboBox;
-import com.extjs.gxt.ui.client.widget.form.TextField;
+import com.extjs.gxt.ui.client.widget.form.*;
 import com.extjs.gxt.ui.client.widget.grid.CellEditor;
 import com.extjs.gxt.ui.client.widget.grid.ColumnConfig;
 import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
@@ -21,7 +21,9 @@ import com.extjs.gxt.ui.client.widget.layout.FlowLayout;
 import com.extjs.gxt.ui.client.widget.toolbar.PagingToolBar;
 import com.extjs.gxt.ui.client.widget.toolbar.ToolBar;
 import com.google.gwt.core.client.Scheduler;
+import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.client.Element;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.hubachov.client.model.Role;
 import com.hubachov.client.model.User;
@@ -36,6 +38,7 @@ public class UserTable extends LayoutContainer {
     private final UserServiceAsync userServiceAsync;
     private static final String REGEX_EMAIL = "^[_A-Za-z0-9-\\\\+]+(\\\\.[_A-Za-z0-9-]+)*\n" +
             "@[A-Za-z0-9-]+(\\\\.[A-Za-z0-9]+)*(\\\\.[A-Za-z]{2,})$";
+    private static final String DATE_FORMAT = "MM/dd/y";
 
     public UserTable(final UserServiceAsync userServiceAsync) {
         this.userServiceAsync = userServiceAsync;
@@ -43,6 +46,7 @@ public class UserTable extends LayoutContainer {
 
     @Override
     protected void onRender(Element parent, int index) {
+        super.onRender(parent, index);
         super.onRender(parent, index);
         setLayout(new FlowLayout());
 
@@ -53,18 +57,19 @@ public class UserTable extends LayoutContainer {
         ColumnConfig emailColumnConfig = new ColumnConfig("email", "Email", 100);
         ColumnConfig firstNameColumnConfig = new ColumnConfig("firstName", "First Name", 100);
         ColumnConfig lastNameColumnConfig = new ColumnConfig("lastName", "Last Name", 100);
-        configs.add(new ColumnConfig("birthday", "Birthday", 100));
-        ColumnConfig roleColumnConfig = new ColumnConfig("role", "Role", 70);
+        ColumnConfig birthdayColumnConfig = new ColumnConfig("birthday", "Birthday", 100);
+        ColumnConfig roleColumnConfig = new ColumnConfig("role", "Role", 120);
 
         configs.add(firstNameColumnConfig);
         configs.add(lastNameColumnConfig);
         configs.add(emailColumnConfig);
+        configs.add(birthdayColumnConfig);
         configs.add(roleColumnConfig);
         //setting of editable properties of cells
         //for Email column
         TextField<String> emailField = new TextField<String>();
         emailField.setAllowBlank(false);
-        emailField.setRegex(REGEX_EMAIL);
+       // emailField.setRegex(REGEX_EMAIL);
         emailColumnConfig.setEditor(new CellEditor(emailField));
         //for First Name column
         TextField<String> firstNameField = new TextField<String>();
@@ -78,16 +83,25 @@ public class UserTable extends LayoutContainer {
         lastNameField.setMinLength(3);
         lastNameField.setMaxLength(50);
         lastNameColumnConfig.setEditor(new CellEditor(lastNameField));
+        //for Birthday column
+        DateField dateField = new DateField();
+        dateField.getPropertyEditor().setFormat(DateTimeFormat.getFormat(DATE_FORMAT));
+        birthdayColumnConfig.setDateTimeFormat(DateTimeFormat.getFormat(DATE_FORMAT));
+        birthdayColumnConfig.setEditor(new CellEditor(dateField));
         //for Role column
         final SimpleComboBox<String> roleComboBox = new SimpleComboBox<String>();
         roleComboBox.setForceSelection(true);
         roleComboBox.setTriggerAction(ComboBox.TriggerAction.ALL);
-        roleComboBox.add("User");
-        roleComboBox.add("Admin");
+        roleComboBox.add("user");
+        roleComboBox.add("admin");
+        roleComboBox.setEditable(false);
         CellEditor roleEditor = new CellEditor(roleComboBox) {
             @Override
             public Object preProcessValue(Object value) {
-                return value;
+                if (value == null) {
+                    return value;
+                }
+                return roleComboBox.findModel(value.toString());
             }
 
             @Override
@@ -95,7 +109,7 @@ public class UserTable extends LayoutContainer {
                 if (value == null) {
                     return value;
                 }
-                return ((User) value).get("role");
+                return ((ModelData) value).get("value");
             }
         };
         roleColumnConfig.setEditor(roleEditor);
@@ -111,7 +125,7 @@ public class UserTable extends LayoutContainer {
             }
         };
         final PagingLoader<PagingLoadResult<Role>> loader = new BasePagingLoader<PagingLoadResult<Role>>(proxy);
-        ListStore<User> listStore = new ListStore<User>(loader);
+        final ListStore<User> listStore = new ListStore<User>(loader);
         ColumnModel cm = new ColumnModel(configs);
         final EditorGrid<User> grid = new EditorGrid<User>(listStore, cm);
         grid.addListener(Events.Attach, new Listener<GridEvent<User>>() {
@@ -141,7 +155,25 @@ public class UserTable extends LayoutContainer {
         });
         grid.setStripeRows(true);
         ToolBar toolBar = new ToolBar();
-        toolBar.add(new Button("Test"));
+        grid.getSelectionModel().bind(listStore);
+        grid.getSelectionModel().setSelectionMode(Style.SelectionMode.SINGLE);
+        listStore.addStoreListener(new StoreListener<User>() {
+            @Override
+            public void storeUpdate(StoreEvent<User> se) {
+                User user = grid.getSelectionModel().getSelectedItem();
+                userServiceAsync.update(user, new AsyncCallback<Void>() {
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        Window.alert(throwable.getMessage());
+                    }
+
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Info.display("Ololo", "Success");
+                    }
+                });
+            }
+        });
         PagingToolBar pagingToolBar = new PagingToolBar(10);
         pagingToolBar.bind(loader);
         ContentPanel panel = new ContentPanel();

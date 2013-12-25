@@ -23,7 +23,7 @@ public class UserDAOJDBC implements UserDAO {
     private static final String SQL__FIND_BY_EMAIL = "SELECT * FROM User WHERE user_email=?;";
     private static final String SQL__REMOVE_USER = "DELETE FROM User WHERE user_id=?;";
     private static final String SQL__UPDATE_USER = "UPDATE User SET role_id=?, user_password=?, user_email=?, " +
-            "user_firstName=?, user_lastName=? WHERE user_id=?;";
+            "user_firstName=?, user_lastName=?, user_birthday=? WHERE user_id=?;";
 
     @Override
     public synchronized void create(User user) throws SQLException {
@@ -67,7 +67,8 @@ public class UserDAOJDBC implements UserDAO {
             statement.setString(3, user.getEmail());
             statement.setString(4, user.getFirstName());
             statement.setString(5, user.getLastName());
-            statement.setLong(6, user.getId());
+            statement.setDate(6, new java.sql.Date(user.getBirthday().getTime()));
+            statement.setLong(7, user.getId());
             statement.executeUpdate();
         } catch (SQLException e) {
             log.error("Can't update user#" + user.getId(), e);

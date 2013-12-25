@@ -60,7 +60,7 @@ public class User extends BaseModel implements Serializable {
     }
 
     public String getEmail() {
-        return email;
+        return get("email");
     }
 
     public void setEmail(String email) {
@@ -69,7 +69,7 @@ public class User extends BaseModel implements Serializable {
     }
 
     public String getFirstName() {
-        return firstName;
+        return get("firstName");
     }
 
     public void setFirstName(String firstName) {
@@ -78,16 +78,16 @@ public class User extends BaseModel implements Serializable {
     }
 
     public String getLastName() {
-        return lastName;
+        return get("lastName");
     }
 
-    public void setLastName(String lastname) {
-        this.lastName = lastname;
-        set("lastName", lastName);
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+        set("lastName", this.lastName);
     }
 
     public Date getBirthday() {
-        return birthday;
+        return get("birthday");
     }
 
     public void setBirthday(Date birthday) {

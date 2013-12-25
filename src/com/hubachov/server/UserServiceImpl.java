@@ -5,7 +5,9 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.hubachov.client.model.Role;
 import com.hubachov.client.model.User;
 import com.hubachov.client.service.UserService;
+import com.hubachov.dao.RoleDAO;
 import com.hubachov.dao.UserDAO;
+import com.hubachov.dao.impl.jdbc.RoleDAOJDBC;
 import com.hubachov.dao.impl.jdbc.UserDAOJDBC;
 
 import java.util.ArrayList;
@@ -15,6 +17,7 @@ import java.util.List;
 
 public class UserServiceImpl extends RemoteServiceServlet implements UserService {
     private UserDAO dao = new UserDAOJDBC();
+    private RoleDAO roleDAO = new RoleDAOJDBC();
 
     @Override
     public BasePagingLoadResult<User> getUsers(BasePagingLoadConfig config) throws Exception {
@@ -41,5 +44,15 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
             result.add(roles.get(i));
         }
         return new BasePagingLoadResult<User>(result, start, roles.size());
+    }
+
+    @Override
+    public void update(User user) throws Exception {
+        try {
+            user.setRole(roleDAO.findByName(user.get("role").toString()));
+            dao.update(user);
+        } catch (Exception e) {
+            throw e;
+        }
     }
 }

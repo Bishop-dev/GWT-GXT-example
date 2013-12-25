@@ -9,4 +9,6 @@ import com.hubachov.client.model.User;
 @RemoteServiceRelativePath(value = "UserService")
 public interface UserService extends RemoteService {
     public BasePagingLoadResult<User> getUsers(BasePagingLoadConfig config) throws Exception;
+
+    public void update(User user) throws Exception;
 }

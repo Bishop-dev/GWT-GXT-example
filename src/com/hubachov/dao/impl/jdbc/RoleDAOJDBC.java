@@ -16,10 +16,10 @@ import com.hubachov.client.model.Role;
 public class RoleDAOJDBC implements RoleDAO {
     private static Logger log = Logger.getLogger(RoleDAOJDBC.class);
     private static final String SQL__GET_ALL = "SELECT * FROM ROLE";
-    private static final String SQL__CREATE_ROLE = "INSERT INTO Role (name) VALUES(?);";
-    private static final String SQL__UPDATE_ROLE = "UPDATE Role SET name=? WHERE id=?;";
-    private static final String SQL__REMOVE_ROLE = "DELETE FROM Role WHERE id=?;";
-    private static final String SQL__FIND_BY_NAME = "SELECT * FROM Role WHERE name=?;";
+    private static final String SQL__CREATE_ROLE = "INSERT INTO Role (role_name) VALUES(?);";
+    private static final String SQL__UPDATE_ROLE = "UPDATE Role SET role_name=? WHERE role_id=?;";
+    private static final String SQL__REMOVE_ROLE = "DELETE FROM Role WHERE role_id=?;";
+    private static final String SQL__FIND_BY_NAME = "SELECT * FROM Role WHERE role_name=?;";
 
     @Override
     public List<Role> findAll() throws Exception {
