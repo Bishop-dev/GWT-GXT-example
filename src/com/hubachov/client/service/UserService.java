@@ -11,4 +11,6 @@ public interface UserService extends RemoteService {
     public BasePagingLoadResult<User> getUsers(BasePagingLoadConfig config) throws Exception;
 
     public void update(User user) throws Exception;
+
+    public void remove(User user) throws Exception;
 }

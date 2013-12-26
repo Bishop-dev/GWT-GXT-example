@@ -5,27 +5,32 @@ import com.extjs.gxt.ui.client.data.*;
 import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
 import com.extjs.gxt.ui.client.widget.ContentPanel;
+import com.extjs.gxt.ui.client.widget.Info;
 import com.extjs.gxt.ui.client.widget.LayoutContainer;
 import com.extjs.gxt.ui.client.widget.button.Button;
 import com.extjs.gxt.ui.client.widget.grid.ColumnConfig;
 import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
 import com.extjs.gxt.ui.client.widget.grid.Grid;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
-import com.extjs.gxt.ui.client.widget.layout.FlowLayout;
 import com.extjs.gxt.ui.client.widget.toolbar.PagingToolBar;
 import com.extjs.gxt.ui.client.widget.toolbar.ToolBar;
 import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.user.client.Element;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.DialogBox;
 import com.hubachov.client.element.form.EditForm;
-import com.hubachov.client.model.Role;
 import com.hubachov.client.model.User;
 import com.hubachov.client.service.UserServiceAsync;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class UserTable extends LayoutContainer {
     private final UserServiceAsync userServiceAsync;
+    private ContentPanel view = new ContentPanel();
 
     public UserTable(final UserServiceAsync userServiceAsync) {
         this.userServiceAsync = userServiceAsync;
@@ -34,11 +39,18 @@ public class UserTable extends LayoutContainer {
     @Override
     protected void onRender(Element parent, int index) {
         super.onRender(parent, index);
-        super.onRender(parent, index);
-        setLayout(new FlowLayout());
+        BasePagingLoader<PagingLoadResult<User>> loader = new BasePagingLoader<PagingLoadResult<User>>(initProxy());
+        ListStore<User> store = new ListStore<User>(loader);
+        Grid<User> grid = new Grid<User>(store, new ColumnModel(configureColumns()));
+        addGridOnAttachListener(grid, loader);
+        attachToolbars(loader, grid);
+        styleGrid(grid, store);
+        view.add(grid);
+        add(view);
+    }
 
-        //Preparing columns
-        final List<ColumnConfig> configs = new ArrayList<ColumnConfig>();
+    private List<ColumnConfig> configureColumns() {
+        List<ColumnConfig> configs = new ArrayList<ColumnConfig>();
         configs.add(new ColumnConfig("id", "Id", 30));
         configs.add(new ColumnConfig("login", "Login", 100));
         configs.add(new ColumnConfig("email", "Email", 100));
@@ -46,22 +58,42 @@ public class UserTable extends LayoutContainer {
         configs.add(new ColumnConfig("lastName", "Last Name", 100));
         configs.add(new ColumnConfig("birthday", "Birthday", 100));
         configs.add(new ColumnConfig("role", "Role", 120));
+        alignColumns(configs, Style.HorizontalAlignment.LEFT);
+        return configs;
+    }
 
-        //align text in grid to left side
-        Iterator<ColumnConfig> iterator = configs.iterator();
-        while (iterator.hasNext()) {
-            iterator.next().setAlignment(Style.HorizontalAlignment.LEFT);
-        }
-        RpcProxy<BasePagingLoadResult<User>> proxy = new RpcProxy<BasePagingLoadResult<User>>() {
+    private RpcProxy<BasePagingLoadResult<User>> initProxy() {
+        return new RpcProxy<BasePagingLoadResult<User>>() {
             @Override
             protected void load(Object config, AsyncCallback<BasePagingLoadResult<User>> callback) {
                 userServiceAsync.getUsers((BasePagingLoadConfig) config, callback);
             }
         };
-        final PagingLoader<PagingLoadResult<Role>> loader = new BasePagingLoader<PagingLoadResult<Role>>(proxy);
-        final ListStore<User> listStore = new ListStore<User>(loader);
-        ColumnModel cm = new ColumnModel(configs);
-        final Grid<User> grid = new Grid<User>(listStore, cm);
+    }
+
+    private void attachToolbars(BasePagingLoader<PagingLoadResult<User>> loader, Grid<User> grid) {
+        PagingToolBar pagingToolBar = new PagingToolBar(10);
+        pagingToolBar.bind(loader);
+        ToolBar toolBar = new ToolBar();
+        view.setHeading("Editable User Grid");
+        view.setFrame(true);
+        view.setSize(700, 300);
+        view.setLayout(new FitLayout());
+        view.setBottomComponent(pagingToolBar);
+        view.setTopComponent(toolBar);
+        toolBar.add(makeEditBtn(grid));
+        toolBar.add(makeDeleteBtn(grid));
+    }
+
+    private void styleGrid(Grid<User> grid, ListStore<User> listStore) {
+        grid.setStripeRows(true);
+        grid.setColumnLines(true);
+        grid.getSelectionModel().bind(listStore);
+        grid.getSelectionModel().setSelectionMode(Style.SelectionMode.SINGLE);
+        grid.setSize(600, 300);
+    }
+
+    private void addGridOnAttachListener(final Grid<User> grid, final BasePagingLoader<PagingLoadResult<User>> loader) {
         grid.addListener(Events.Attach, new Listener<GridEvent<User>>() {
             @Override
             public void handleEvent(GridEvent<User> baseEvent) {
@@ -87,30 +119,122 @@ public class UserTable extends LayoutContainer {
                 });
             }
         });
-        grid.setStripeRows(true);
-        grid.setColumnLines(true);
-        ToolBar toolBar = new ToolBar();
-        grid.getSelectionModel().bind(listStore);
-        grid.getSelectionModel().setSelectionMode(Style.SelectionMode.SINGLE);
-        PagingToolBar pagingToolBar = new PagingToolBar(10);
-        pagingToolBar.bind(loader);
-        final ContentPanel panel = new ContentPanel();
-        panel.setHeading("Editable User Grid");
-        panel.setFrame(true);
-        panel.setSize(700, 300);
-        panel.setLayout(new FitLayout());
-        panel.setTopComponent(toolBar);
-        panel.setBottomComponent(pagingToolBar);
-        panel.add(grid);
-        toolBar.add(new Button("Edit", new SelectionListener<ButtonEvent>() {
+    }
+
+    private Button makeEditBtn(Grid<User> grid) {
+        Button button = new Button("Edit");
+        addEditButtonListener(button, grid);
+        return button;
+    }
+
+    private Button makeDeleteBtn(Grid grid) {
+        Button button = new Button("Delete");
+        addDeleteButtonListener(button, grid);
+        return button;
+    }
+
+    private void addEditButtonListener(Button button, final Grid<User> grid) {
+        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                //add(new EditForm(new User(1L, "admin", "admin", "admin@mail.com", "Admin", "Adminovich", new Date(), new Role(1L, "admin"))));
                 add(new EditForm(grid.getSelectionModel().getSelectedItem(), userServiceAsync));
                 layout(true);
             }
-        }));
-        grid.setSize(600, 300);
-        add(panel);
+        });
+    }
+
+    private void addDeleteButtonListener(Button button, final Grid<User> grid) {
+        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
+            @Override
+            public void componentSelected(ButtonEvent ce) {
+                User user = grid.getSelectionModel().getSelectedItem();
+                if (user != null) {
+                    //for dialog version
+//                    attachDeleteConfirmDialog(grid);
+//                    layout(true);
+                    //without confirmation
+                    userServiceAsync.remove(user, new DeleteUserAsyncCallback<Void>(grid));
+                }
+            }
+        });
+    }
+
+    private void alignColumns(List<ColumnConfig> columns, Style.HorizontalAlignment side) {
+        Iterator<ColumnConfig> iterator = columns.iterator();
+        while (iterator.hasNext()) {
+            iterator.next().setAlignment(side);
+        }
+    }
+
+    private void attachDeleteConfirmDialog(final Grid<User> grid) {
+        final DialogBox box = initDeleteDialog();
+        attachYESButton(box, grid);
+        attachNOButton(box);
+        add(box);
+    }
+
+    private DialogBox initDeleteDialog() {
+        DialogBox dialog = new DialogBox(false, true);
+        dialog.setText("Delete this user?");
+        dialog.setVisible(true);
+        return dialog;
+    }
+
+    private void attachYESButton(final DialogBox dialog, final Grid<User> grid) {
+        Button button = new Button("YES");
+        addYESListener(button, grid, dialog);
+        dialog.add(button);
+    }
+
+    private void attachNOButton(final DialogBox dialog) {
+        Button button = new Button("NO");
+        addNOListener(button, dialog);
+        //something wrong with next line :-(
+        //dialog.add(button);
+    }
+
+    private void addYESListener(Button button, final Grid<User> grid, final DialogBox dialog) {
+        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
+            @Override
+            public void componentSelected(ButtonEvent ce) {
+                User user = grid.getSelectionModel().getSelectedItem();
+                userServiceAsync.remove(user, new DeleteUserAsyncCallback<Void>(grid));
+                removeDialog(dialog);
+            }
+        });
+    }
+
+    private void addNOListener(final Button button, final DialogBox dialogBox) {
+        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
+            @Override
+            public void componentSelected(ButtonEvent ce) {
+                removeDialog(dialogBox);
+            }
+        });
+    }
+
+    private void removeDialog(DialogBox dialogBox) {
+        remove(dialogBox);
+        layout(true);
+    }
+
+}
+
+class DeleteUserAsyncCallback<Void> implements AsyncCallback<Void> {
+    private final Grid<User> grid;
+
+    public DeleteUserAsyncCallback(Grid<User> grid) {
+        this.grid = grid;
+    }
+
+    @Override
+    public void onFailure(Throwable throwable) {
+        Window.alert(throwable.getMessage());
+    }
+
+    @Override
+    public void onSuccess(Void aVoid) {
+        Info.display("Success", "Deleted");
+        grid.getStore().getLoader().load();
     }
 }

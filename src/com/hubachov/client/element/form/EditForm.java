@@ -53,6 +53,7 @@ public class EditForm extends LayoutContainer {
 
     private void attachIdField() {
         TextField<String> id = new TextField<String>();
+        id.setAllowBlank(false);
         id.setFieldLabel("Id");
         id.setName("id");
         id.setEnabled(false);

@@ -55,4 +55,13 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
             throw e;
         }
     }
+
+    @Override
+    public void remove(User user) throws Exception {
+        try {
+            dao.remove(user);
+        } catch (Exception e) {
+
+        }
+    }
 }
