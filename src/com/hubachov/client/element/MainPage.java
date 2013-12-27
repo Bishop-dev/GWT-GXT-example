@@ -45,7 +45,7 @@ public class MainPage extends LayoutContainer {
             @Override
             public void componentSelected(ButtonEvent ce) {
                 center.removeAll();
-                center.add(new UserTable(userServiceAsync));
+                center.add(new UserTable(userServiceAsync, roleServiceAsync));
                 center.layout(true);
             }
         });

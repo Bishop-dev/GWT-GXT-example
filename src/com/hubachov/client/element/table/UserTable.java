@@ -21,6 +21,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.hubachov.client.element.form.EditForm;
 import com.hubachov.client.model.User;
+import com.hubachov.client.service.RoleServiceAsync;
 import com.hubachov.client.service.UserServiceAsync;
 
 import java.util.ArrayList;
@@ -30,10 +31,12 @@ import java.util.Map;
 
 public class UserTable extends LayoutContainer {
     private final UserServiceAsync userServiceAsync;
+    private final RoleServiceAsync roleServiceAsync;
     private ContentPanel view = new ContentPanel();
 
-    public UserTable(final UserServiceAsync userServiceAsync) {
+    public UserTable(final UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
         this.userServiceAsync = userServiceAsync;
+        this.roleServiceAsync = roleServiceAsync;
     }
 
     @Override
@@ -137,7 +140,7 @@ public class UserTable extends LayoutContainer {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                add(new EditForm(grid.getSelectionModel().getSelectedItem(), userServiceAsync));
+                add(new EditForm(grid.getSelectionModel().getSelectedItem(), userServiceAsync, roleServiceAsync));
                 layout(true);
             }
         });

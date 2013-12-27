@@ -1,6 +1,7 @@
 package com.hubachov.client.element.form;
 
 import com.extjs.gxt.ui.client.Style;
+import com.extjs.gxt.ui.client.data.*;
 import com.extjs.gxt.ui.client.event.ButtonEvent;
 import com.extjs.gxt.ui.client.event.SelectionListener;
 import com.extjs.gxt.ui.client.store.ListStore;
@@ -14,6 +15,7 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.hubachov.client.model.Role;
 import com.hubachov.client.model.User;
+import com.hubachov.client.service.RoleServiceAsync;
 import com.hubachov.client.service.UserServiceAsync;
 
 import java.util.*;
@@ -22,11 +24,15 @@ public class EditForm extends LayoutContainer {
     private User user;
     private FormPanel form;
     private static final String DATE_FORMAT = "MM/dd/y";
+    private static final String REGEX_EMAIL = "^[_A-Za-z0-9-\\\\+]+(\\\\.[_A-Za-z0-9-]+)*\n" +
+            "@[A-Za-z0-9-]+(\\\\.[A-Za-z0-9]+)*(\\\\.[A-Za-z]{2,})$;";
     private UserServiceAsync userServiceAsync;
+    private RoleServiceAsync roleServiceAsync;
 
-    public EditForm(User user, UserServiceAsync userServiceAsync) {
-        this.user = user;
+    public EditForm(User user, UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
         this.userServiceAsync = userServiceAsync;
+        this.roleServiceAsync = roleServiceAsync;
+        this.user = user;
     }
 
     @Override
@@ -35,6 +41,7 @@ public class EditForm extends LayoutContainer {
         initForm();
         attachIdField();
         attachLoginField();
+        attachPasswordField();
         attachEmailField();
         attachFirstNameField();
         attachLastNameField();
@@ -53,7 +60,6 @@ public class EditForm extends LayoutContainer {
 
     private void attachIdField() {
         TextField<String> id = new TextField<String>();
-        id.setAllowBlank(false);
         id.setFieldLabel("Id");
         id.setName("id");
         id.setEnabled(false);
@@ -70,10 +76,36 @@ public class EditForm extends LayoutContainer {
         form.add(login);
     }
 
+    private void attachPasswordField() {
+        final TextField<String> password = new TextField<String>();
+        password.setFieldLabel("Password");
+        password.setName("password");
+        password.setPassword(true);
+        password.setValue(user.getPassword());
+        form.add(password);
+        final TextField<String> confirmPassword = new TextField<String>();
+        confirmPassword.setFieldLabel("Password");
+        confirmPassword.setName("confirmPassword");
+        confirmPassword.setPassword(true);
+        confirmPassword.setValue(user.getPassword());
+        confirmPassword.setValidator(new Validator() {
+            @Override
+            public String validate(Field<?> field, String value) {
+                if (password.getValue().equals(confirmPassword.getValue())) {
+                    return null;
+                }
+                return "Passwords do not match";
+            }
+        });
+        form.add(confirmPassword);
+    }
+
     private void attachEmailField() {
         TextField<String> email = new TextField<String>();
         email.setFieldLabel("Email");
         email.setName("email");
+        //something wrong
+        // email.setRegex(REGEX_EMAIL);
         email.setAllowBlank(false);
         email.setValue(user.getEmail());
         form.add(email);
@@ -107,26 +139,44 @@ public class EditForm extends LayoutContainer {
     }
 
     private void attachRolesField() {
-        ListStore<Role> store = new ListStore<Role>();
-        store.add(Arrays.asList(new Role(1L, "admin"), new Role(2L, "user")));
+        RpcProxy<BasePagingLoadResult<Role>> proxy = new RpcProxy<BasePagingLoadResult<Role>>() {
+            @Override
+            protected void load(Object loadConfig, AsyncCallback<BasePagingLoadResult<Role>> callback) {
+                roleServiceAsync.getRoles((BasePagingLoadConfig) loadConfig, callback);
+            }
+        };
+        BaseListLoader<ListLoadResult<ModelData>> loader = new BaseListLoader<ListLoadResult<ModelData>>(proxy);
+        ListStore<Role> roleStore = new ListStore<Role>(loader);
         ComboBox<Role> combo = new ComboBox<Role>();
         combo.setFieldLabel("Role");
         combo.setDisplayField("name");
         combo.setName("role");
         combo.setValue(user.getRole());
         combo.setTriggerAction(ComboBox.TriggerAction.ALL);
-        combo.setStore(store);
+        combo.setStore(roleStore);
         form.add(combo);
     }
 
     private void attachButtons() {
         Button submitBtn = new Button("Submit");
+        Button cancelBtn = new Button("Cancel");
+        addPostListener(submitBtn);
+        addCancelListener(cancelBtn);
         form.addButton(submitBtn);
-        form.addButton(new Button("Cancel"));
+        form.addButton(cancelBtn);
         form.setButtonAlign(Style.HorizontalAlignment.CENTER);
         FormButtonBinding binding = new FormButtonBinding(form);
         binding.addButton(submitBtn);
-        addPostListener(submitBtn);
+    }
+
+    private void addCancelListener(Button cancelBtn) {
+        cancelBtn.addSelectionListener(new SelectionListener<ButtonEvent>() {
+            @Override
+            public void componentSelected(ButtonEvent ce) {
+                remove(form);
+                layout(true);
+            }
+        });
     }
 
     private void addPostListener(Button submitBtn) {
@@ -158,6 +208,9 @@ public class EditForm extends LayoutContainer {
             if (fieldName.equals("login")) {
                 user.setLogin(field.getRawValue());
             }
+            if (fieldName.equals("password")) {
+                user.setPassword(field.getRawValue());
+            }
             if (fieldName.equals("email")) {
                 user.setEmail(field.getRawValue());
             }
@@ -176,4 +229,5 @@ public class EditForm extends LayoutContainer {
         }
         return user;
     }
+
 }

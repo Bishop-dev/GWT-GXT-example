@@ -171,6 +171,7 @@ public class UserDAOJDBC implements UserDAO {
             role.setName(result.getString("role_name"));
             user.setRole(role);
             user.setLogin(result.getString("user_login"));
+            user.setPassword(result.getString("user_password"));
             user.setEmail(result.getString("user_email"));
             user.setFirstName(result.getString("user_firstname"));
             user.setLastName(result.getString("user_lastname"));
