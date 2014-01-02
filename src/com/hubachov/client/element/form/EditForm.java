@@ -9,6 +9,7 @@ import com.extjs.gxt.ui.client.widget.Info;
 import com.extjs.gxt.ui.client.widget.LayoutContainer;
 import com.extjs.gxt.ui.client.widget.button.Button;
 import com.extjs.gxt.ui.client.widget.form.*;
+import com.extjs.gxt.ui.client.widget.grid.Grid;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
@@ -23,6 +24,7 @@ import java.util.*;
 public class EditForm extends LayoutContainer {
     private User user;
     private FormPanel form;
+    private final Grid<User> grid;
     private static final String DATE_FORMAT = "MM/dd/y";
     private static final String REGEX_EMAIL = "(?:[a-z0-9!#$%&'*+/=?^_`{|" +
             "}~-]+(?:\\.[a-z0-9!#$%&'*" +
@@ -36,10 +38,11 @@ public class EditForm extends LayoutContainer {
     private UserServiceAsync userServiceAsync;
     private RoleServiceAsync roleServiceAsync;
 
-    public EditForm(User user, UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
+    public EditForm(Grid<User> grid, UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
         this.userServiceAsync = userServiceAsync;
         this.roleServiceAsync = roleServiceAsync;
-        this.user = user;
+        this.user = grid.getSelectionModel().getSelectedItem();
+        this.grid = grid;
     }
 
     @Override
@@ -204,8 +207,7 @@ public class EditForm extends LayoutContainer {
         cancelBtn.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                remove(form);
-                layout(true);
+                removeForm();
             }
         });
     }
@@ -224,6 +226,7 @@ public class EditForm extends LayoutContainer {
                         @Override
                         public void onSuccess(Void aVoid) {
                             Info.display("Success", "Updated");
+                            removeForm();
                         }
                     });
                 } else {
@@ -236,6 +239,7 @@ public class EditForm extends LayoutContainer {
                         @Override
                         public void onSuccess(Void aVoid) {
                             Info.display("Success", "Added");
+                            removeForm();
                         }
                     });
                 }
@@ -273,6 +277,12 @@ public class EditForm extends LayoutContainer {
             }
         }
         return user;
+    }
+
+    private void removeForm() {
+        remove(form);
+        layout(true);
+        grid.getStore().getLoader().load();
     }
 
 }

@@ -30,9 +30,10 @@ import java.util.Map;
 public class UserTable extends LayoutContainer {
     private final UserServiceAsync userServiceAsync;
     private final RoleServiceAsync roleServiceAsync;
+    private Grid<User> grid;
     private ContentPanel view = new ContentPanel();
 
-    public UserTable(final UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
+    public UserTable(UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
         this.userServiceAsync = userServiceAsync;
         this.roleServiceAsync = roleServiceAsync;
     }
@@ -42,10 +43,10 @@ public class UserTable extends LayoutContainer {
         super.onRender(parent, index);
         BasePagingLoader<PagingLoadResult<User>> loader = new BasePagingLoader<PagingLoadResult<User>>(initProxy());
         ListStore<User> store = new ListStore<User>(loader);
-        Grid<User> grid = new Grid<User>(store, new ColumnModel(configureColumns()));
-        addGridOnAttachListener(grid, loader);
-        attachToolbars(loader, grid);
-        styleGrid(grid, store);
+        grid = new Grid<User>(store, new ColumnModel(configureColumns()));
+        addGridOnAttachListener(loader);
+        attachToolbars(loader);
+        styleGrid(store);
         view.add(grid);
         add(view);
     }
@@ -72,7 +73,7 @@ public class UserTable extends LayoutContainer {
         };
     }
 
-    private void attachToolbars(BasePagingLoader<PagingLoadResult<User>> loader, Grid<User> grid) {
+    private void attachToolbars(BasePagingLoader<PagingLoadResult<User>> loader) {
         PagingToolBar pagingToolBar = new PagingToolBar(10);
         pagingToolBar.bind(loader);
         ToolBar toolBar = new ToolBar();
@@ -83,11 +84,11 @@ public class UserTable extends LayoutContainer {
         view.setBottomComponent(pagingToolBar);
         view.setTopComponent(toolBar);
         toolBar.add(makeNewUserBtn());
-        toolBar.add(makeEditBtn(grid));
-        toolBar.add(makeDeleteBtn(grid));
+        toolBar.add(makeEditBtn());
+        toolBar.add(makeDeleteBtn());
     }
 
-    private void styleGrid(Grid<User> grid, ListStore<User> listStore) {
+    private void styleGrid(ListStore<User> listStore) {
         grid.setStripeRows(true);
         grid.setColumnLines(true);
         grid.getSelectionModel().bind(listStore);
@@ -95,7 +96,7 @@ public class UserTable extends LayoutContainer {
         grid.setSize(600, 300);
     }
 
-    private void addGridOnAttachListener(final Grid<User> grid, final BasePagingLoader<PagingLoadResult<User>> loader) {
+    private void addGridOnAttachListener(final BasePagingLoader<PagingLoadResult<User>> loader) {
         grid.addListener(Events.Attach, new Listener<GridEvent<User>>() {
             @Override
             public void handleEvent(GridEvent<User> baseEvent) {
@@ -129,24 +130,24 @@ public class UserTable extends LayoutContainer {
         return button;
     }
 
-    private Button makeEditBtn(Grid<User> grid) {
+    private Button makeEditBtn() {
         Button button = new Button("Edit");
-        addEditButtonListener(button, grid);
+        addEditButtonListener(button);
         return button;
     }
 
-    private Button makeDeleteBtn(Grid grid) {
+    private Button makeDeleteBtn() {
         Button button = new Button("Delete");
-        addDeleteButtonListener(button, grid);
+        addDeleteButtonListener(button);
         return button;
     }
 
-    private void addEditButtonListener(Button button, final Grid<User> grid) {
+    private void addEditButtonListener(Button button) {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                add(new EditForm(grid.getSelectionModel().getSelectedItem(), userServiceAsync, roleServiceAsync));
-                //layout(true);
+                add(new EditForm(grid, userServiceAsync, roleServiceAsync));
+                layout(true);
             }
         });
     }
@@ -155,13 +156,13 @@ public class UserTable extends LayoutContainer {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                add(new EditForm(null, userServiceAsync, roleServiceAsync));
+                add(new EditForm(grid, userServiceAsync, roleServiceAsync));
                 layout(true);
             }
         });
     }
 
-    private void addDeleteButtonListener(Button button, final Grid<User> grid) {
+    private void addDeleteButtonListener(Button button) {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
@@ -186,58 +187,6 @@ public class UserTable extends LayoutContainer {
         while (iterator.hasNext()) {
             iterator.next().setAlignment(side);
         }
-    }
-
-    private void attachDeleteConfirmDialog(final Grid<User> grid) {
-        final DialogBox box = initDeleteDialog();
-        attachYESButton(box, grid);
-        attachNOButton(box);
-        add(box);
-    }
-
-    private DialogBox initDeleteDialog() {
-        DialogBox dialog = new DialogBox(false, true);
-        dialog.setText("Delete this user?");
-        dialog.setVisible(true);
-        return dialog;
-    }
-
-    private void attachYESButton(final DialogBox dialog, final Grid<User> grid) {
-        Button button = new Button("YES");
-        // addYESListener(button, grid, dialog);
-        dialog.add(button);
-    }
-
-    private void attachNOButton(final DialogBox dialog) {
-        Button button = new Button("NO");
-        addNOListener(button, dialog);
-        //something wrong with next line :-(
-        //dialog.add(button);
-    }
-
-//    private void addYESListener(Button button, final Grid<User> grid, final DialogBox dialog) {
-//        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
-//            @Override
-//            public void componentSelected(ButtonEvent ce) {
-//                User user = grid.getSelectionModel().getSelectedItem();
-//                userServiceAsync.remove(user, new DeleteUserAsyncCallback<Void>(grid));
-//                removeDialog(dialog);
-//            }
-//        });
-//    }
-
-    private void addNOListener(final Button button, final DialogBox dialogBox) {
-        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
-            @Override
-            public void componentSelected(ButtonEvent ce) {
-                removeDialog(dialogBox);
-            }
-        });
-    }
-
-    private void removeDialog(DialogBox dialogBox) {
-        remove(dialogBox);
-        layout(true);
     }
 
 }
