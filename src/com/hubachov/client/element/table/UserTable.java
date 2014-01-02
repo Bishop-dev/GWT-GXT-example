@@ -4,9 +4,7 @@ import com.extjs.gxt.ui.client.Style;
 import com.extjs.gxt.ui.client.data.*;
 import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
-import com.extjs.gxt.ui.client.widget.ContentPanel;
-import com.extjs.gxt.ui.client.widget.Info;
-import com.extjs.gxt.ui.client.widget.LayoutContainer;
+import com.extjs.gxt.ui.client.widget.*;
 import com.extjs.gxt.ui.client.widget.button.Button;
 import com.extjs.gxt.ui.client.widget.grid.ColumnConfig;
 import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
@@ -148,7 +146,7 @@ public class UserTable extends LayoutContainer {
             @Override
             public void componentSelected(ButtonEvent ce) {
                 add(new EditForm(grid.getSelectionModel().getSelectedItem(), userServiceAsync, roleServiceAsync));
-                layout(true);
+                //layout(true);
             }
         });
     }
@@ -167,13 +165,17 @@ public class UserTable extends LayoutContainer {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                User user = grid.getSelectionModel().getSelectedItem();
+                final User user = grid.getSelectionModel().getSelectedItem();
                 if (user != null) {
-                    //for dialog version
-//                    attachDeleteConfirmDialog(grid);
-//                    layout(true);
-                    //without confirmation
-                    userServiceAsync.remove(user, new DeleteUserAsyncCallback<Void>(grid));
+                    MessageBox.confirm("Delete?", "Are you sure?", new Listener<MessageBoxEvent>() {
+                        @Override
+                        public void handleEvent(MessageBoxEvent be) {
+                            Button btn = be.getButtonClicked();
+                            if (Dialog.YES.equalsIgnoreCase(btn.getItemId())) {
+                                userServiceAsync.remove(user, new DeleteUserAsyncCallback<Void>(grid));
+                            }
+                        }
+                    });
                 }
             }
         });
@@ -202,7 +204,7 @@ public class UserTable extends LayoutContainer {
 
     private void attachYESButton(final DialogBox dialog, final Grid<User> grid) {
         Button button = new Button("YES");
-        addYESListener(button, grid, dialog);
+        // addYESListener(button, grid, dialog);
         dialog.add(button);
     }
 
@@ -213,16 +215,16 @@ public class UserTable extends LayoutContainer {
         //dialog.add(button);
     }
 
-    private void addYESListener(Button button, final Grid<User> grid, final DialogBox dialog) {
-        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
-            @Override
-            public void componentSelected(ButtonEvent ce) {
-                User user = grid.getSelectionModel().getSelectedItem();
-                userServiceAsync.remove(user, new DeleteUserAsyncCallback<Void>(grid));
-                removeDialog(dialog);
-            }
-        });
-    }
+//    private void addYESListener(Button button, final Grid<User> grid, final DialogBox dialog) {
+//        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
+//            @Override
+//            public void componentSelected(ButtonEvent ce) {
+//                User user = grid.getSelectionModel().getSelectedItem();
+//                userServiceAsync.remove(user, new DeleteUserAsyncCallback<Void>(grid));
+//                removeDialog(dialog);
+//            }
+//        });
+//    }
 
     private void addNOListener(final Button button, final DialogBox dialogBox) {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {

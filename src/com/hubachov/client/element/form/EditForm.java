@@ -24,8 +24,6 @@ public class EditForm extends LayoutContainer {
     private User user;
     private FormPanel form;
     private static final String DATE_FORMAT = "MM/dd/y";
-    //    private static final String REGEX_EMAIL = "^[_A-Za-z0-9-\\\\+]+(\\\\.[_A-Za-z0-9-]+)*\n" +
-//            "@[A-Za-z0-9-]+(\\\\.[A-Za-z0-9]+)*(\\\\.[A-Za-z]{2,})$";
     private static final String REGEX_EMAIL = "(?:[a-z0-9!#$%&'*+/=?^_`{|" +
             "}~-]+(?:\\.[a-z0-9!#$%&'*" +
             "+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21" +
@@ -126,7 +124,6 @@ public class EditForm extends LayoutContainer {
         TextField<String> email = new TextField<String>();
         email.setFieldLabel("Email");
         email.setName("email");
-        //something wrong
         email.setRegex(REGEX_EMAIL);
         email.setAllowBlank(false);
         if (user != null) {
