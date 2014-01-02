@@ -11,4 +11,8 @@ public interface UserServiceAsync {
     public void update(User user, AsyncCallback<Void> async);
 
     public void remove(User user, AsyncCallback<Void> async);
+
+    public void create(User user, AsyncCallback<Void> async);
+
+    public void checkLogin(String login, AsyncCallback<Boolean> async);
 }

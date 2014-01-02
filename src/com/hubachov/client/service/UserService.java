@@ -13,4 +13,8 @@ public interface UserService extends RemoteService {
     public void update(User user) throws Exception;
 
     public void remove(User user) throws Exception;
+
+    public void create(User user) throws Exception;
+
+    public boolean checkLogin(String login) throws Exception;
 }

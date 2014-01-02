@@ -84,6 +84,7 @@ public class UserTable extends LayoutContainer {
         view.setLayout(new FitLayout());
         view.setBottomComponent(pagingToolBar);
         view.setTopComponent(toolBar);
+        toolBar.add(makeNewUserBtn());
         toolBar.add(makeEditBtn(grid));
         toolBar.add(makeDeleteBtn(grid));
     }
@@ -124,6 +125,12 @@ public class UserTable extends LayoutContainer {
         });
     }
 
+    private Button makeNewUserBtn() {
+        Button button = new Button("New");
+        addNewUserButtonListener(button);
+        return button;
+    }
+
     private Button makeEditBtn(Grid<User> grid) {
         Button button = new Button("Edit");
         addEditButtonListener(button, grid);
@@ -141,6 +148,16 @@ public class UserTable extends LayoutContainer {
             @Override
             public void componentSelected(ButtonEvent ce) {
                 add(new EditForm(grid.getSelectionModel().getSelectedItem(), userServiceAsync, roleServiceAsync));
+                layout(true);
+            }
+        });
+    }
+
+    private void addNewUserButtonListener(Button button) {
+        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
+            @Override
+            public void componentSelected(ButtonEvent ce) {
+                add(new EditForm(null, userServiceAsync, roleServiceAsync));
                 layout(true);
             }
         });

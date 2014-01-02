@@ -64,4 +64,24 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
 
         }
     }
+
+    @Override
+    public void create(User user) throws Exception {
+        try {
+            user.setRole(roleDAO.findByName(user.get("role").toString()));
+            dao.create(user);
+        } catch (Exception e) {
+
+        }
+    }
+
+    @Override
+    public boolean checkLogin(String login) throws Exception {
+        try {
+            return dao.findByLogin(login) == null;
+        } catch (Exception e) {
+
+        }
+        return false;
+    }
 }

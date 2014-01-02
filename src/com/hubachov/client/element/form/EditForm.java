@@ -24,8 +24,17 @@ public class EditForm extends LayoutContainer {
     private User user;
     private FormPanel form;
     private static final String DATE_FORMAT = "MM/dd/y";
-    private static final String REGEX_EMAIL = "^[_A-Za-z0-9-\\\\+]+(\\\\.[_A-Za-z0-9-]+)*\n" +
-            "@[A-Za-z0-9-]+(\\\\.[A-Za-z0-9]+)*(\\\\.[A-Za-z]{2,})$;";
+    //    private static final String REGEX_EMAIL = "^[_A-Za-z0-9-\\\\+]+(\\\\.[_A-Za-z0-9-]+)*\n" +
+//            "@[A-Za-z0-9-]+(\\\\.[A-Za-z0-9]+)*(\\\\.[A-Za-z]{2,})$";
+    private static final String REGEX_EMAIL = "(?:[a-z0-9!#$%&'*+/=?^_`{|" +
+            "}~-]+(?:\\.[a-z0-9!#$%&'*" +
+            "+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21" +
+            "\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7" +
+            "f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?" +
+            ":[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9" +
+            "][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0" +
+            "-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5" +
+            "a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])";
     private UserServiceAsync userServiceAsync;
     private RoleServiceAsync roleServiceAsync;
 
@@ -39,7 +48,9 @@ public class EditForm extends LayoutContainer {
     protected void onRender(Element parent, int index) {
         super.onRender(parent, index);
         initForm();
-        attachIdField();
+        if (user != null) {
+            attachIdField();
+        }
         attachLoginField();
         attachPasswordField();
         attachEmailField();
@@ -62,17 +73,22 @@ public class EditForm extends LayoutContainer {
         TextField<String> id = new TextField<String>();
         id.setFieldLabel("Id");
         id.setName("id");
-        id.setEnabled(false);
         id.setValue(Long.toString(user.getId()));
+        id.setEnabled(false);
         form.add(id);
     }
 
     private void attachLoginField() {
-        TextField<String> login = new TextField<String>();
+        final TextField<String> login = new TextField<String>();
         login.setFieldLabel("Login");
         login.setName("login");
-        login.setEnabled(false);
-        login.setValue(user.getLogin());
+        login.setAllowBlank(false);
+        if (user != null) {
+            login.setValue(user.getLogin());
+            login.setEnabled(false);
+        } else {
+
+        }
         form.add(login);
     }
 
@@ -81,13 +97,19 @@ public class EditForm extends LayoutContainer {
         password.setFieldLabel("Password");
         password.setName("password");
         password.setPassword(true);
-        password.setValue(user.getPassword());
+        password.setAllowBlank(false);
+        if (user != null) {
+            password.setValue(user.getPassword());
+        }
         form.add(password);
         final TextField<String> confirmPassword = new TextField<String>();
-        confirmPassword.setFieldLabel("Password");
+        confirmPassword.setFieldLabel("Confirm");
         confirmPassword.setName("confirmPassword");
         confirmPassword.setPassword(true);
-        confirmPassword.setValue(user.getPassword());
+        confirmPassword.setAllowBlank(false);
+        if (user != null) {
+            confirmPassword.setValue(user.getPassword());
+        }
         confirmPassword.setValidator(new Validator() {
             @Override
             public String validate(Field<?> field, String value) {
@@ -105,9 +127,11 @@ public class EditForm extends LayoutContainer {
         email.setFieldLabel("Email");
         email.setName("email");
         //something wrong
-        // email.setRegex(REGEX_EMAIL);
+        email.setRegex(REGEX_EMAIL);
         email.setAllowBlank(false);
-        email.setValue(user.getEmail());
+        if (user != null) {
+            email.setValue(user.getEmail());
+        }
         form.add(email);
     }
 
@@ -116,7 +140,9 @@ public class EditForm extends LayoutContainer {
         firstName.setFieldLabel("First Name");
         firstName.setName("firstName");
         firstName.setAllowBlank(false);
-        firstName.setValue(user.getFirstName());
+        if (user != null) {
+            firstName.setValue(user.getFirstName());
+        }
         form.add(firstName);
     }
 
@@ -125,7 +151,9 @@ public class EditForm extends LayoutContainer {
         lastName.setFieldLabel("Last Name");
         lastName.setName("lastName");
         lastName.setAllowBlank(false);
-        lastName.setValue(user.getLastName());
+        if (user != null) {
+            lastName.setValue(user.getLastName());
+        }
         form.add(lastName);
     }
 
@@ -134,7 +162,10 @@ public class EditForm extends LayoutContainer {
         dateField.getPropertyEditor().setFormat(DateTimeFormat.getFormat(DATE_FORMAT));
         dateField.setFieldLabel("Birthday");
         dateField.setName("birthday");
-        dateField.setValue(user.getBirthday());
+        dateField.setAllowBlank(false);
+        if (user != null) {
+            dateField.setValue(user.getBirthday());
+        }
         form.add(dateField);
     }
 
@@ -151,7 +182,10 @@ public class EditForm extends LayoutContainer {
         combo.setFieldLabel("Role");
         combo.setDisplayField("name");
         combo.setName("role");
-        combo.setValue(user.getRole());
+        combo.setAllowBlank(false);
+        if (user != null) {
+            combo.setValue(user.getRole());
+        }
         combo.setTriggerAction(ComboBox.TriggerAction.ALL);
         combo.setStore(roleStore);
         form.add(combo);
@@ -183,17 +217,31 @@ public class EditForm extends LayoutContainer {
         submitBtn.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                userServiceAsync.update(constructUser(), new AsyncCallback<Void>() {
-                    @Override
-                    public void onFailure(Throwable throwable) {
-                        Window.alert(throwable.getMessage());
-                    }
+                if (user != null) {
+                    userServiceAsync.update(constructUser(), new AsyncCallback<Void>() {
+                        @Override
+                        public void onFailure(Throwable throwable) {
+                            Window.alert(throwable.getMessage());
+                        }
 
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Info.display("Success", "Ololo");
-                    }
-                });
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Info.display("Success", "Updated");
+                        }
+                    });
+                } else {
+                    userServiceAsync.create(constructUser(), new AsyncCallback<Void>() {
+                        @Override
+                        public void onFailure(Throwable throwable) {
+                            Window.alert(throwable.getMessage());
+                        }
+
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Info.display("Success", "Added");
+                        }
+                    });
+                }
             }
         });
     }
