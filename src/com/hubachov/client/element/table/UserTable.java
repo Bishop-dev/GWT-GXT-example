@@ -16,7 +16,7 @@ import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.hubachov.client.element.form.EditForm;
+import com.hubachov.client.element.form.UserForm;
 import com.hubachov.client.model.User;
 import com.hubachov.client.service.RoleServiceAsync;
 import com.hubachov.client.service.UserServiceAsync;
@@ -32,6 +32,8 @@ public class UserTable extends LayoutContainer {
     private Grid<User> grid;
     private List<ColumnConfig> columns;
     private ListStore<User> store;
+    private BasePagingLoader<PagingLoadResult<User>> loader;
+    private RpcProxy<BasePagingLoadResult<User>> proxy;
     private ContentPanel view = new ContentPanel();
 
     public UserTable(UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
@@ -42,13 +44,14 @@ public class UserTable extends LayoutContainer {
     @Override
     protected void onRender(Element parent, int index) {
         super.onRender(parent, index);
-        BasePagingLoader<PagingLoadResult<User>> loader = new BasePagingLoader<PagingLoadResult<User>>(initProxy());
+        initProxy();
+        loader = new BasePagingLoader<PagingLoadResult<User>>(proxy);
         configureColumns();
         store = new ListStore<User>(loader);
         grid = new EditorGrid<User>(store, new ColumnModel(columns));
-        addGridOnAttachListener(loader);
-        attachToolbars(loader);
-        styleGrid(store);
+        addGridOnAttachListener();
+        attachToolbars();
+        styleGrid();
         view.add(grid);
         add(view);
     }
@@ -63,14 +66,13 @@ public class UserTable extends LayoutContainer {
         columns.add(new ColumnConfig("birthday", "Birthday", 100));
         columns.add(new ColumnConfig("role", "Role", 120));
         CheckColumnConfig checkColumnConfig = new CheckColumnConfig("remove", "Delete?", 100);
-        CellEditor editor = new CellEditor(new CheckBox());
-        checkColumnConfig.setEditor(editor);
+        checkColumnConfig.setEditor(new CellEditor(new CheckBox()));
         columns.add(checkColumnConfig);
         alignColumns(Style.HorizontalAlignment.LEFT);
     }
 
-    private RpcProxy<BasePagingLoadResult<User>> initProxy() {
-        return new RpcProxy<BasePagingLoadResult<User>>() {
+    private void initProxy() {
+        proxy = new RpcProxy<BasePagingLoadResult<User>>() {
             @Override
             protected void load(Object config, AsyncCallback<BasePagingLoadResult<User>> callback) {
                 userServiceAsync.getUsers((BasePagingLoadConfig) config, callback);
@@ -78,30 +80,30 @@ public class UserTable extends LayoutContainer {
         };
     }
 
-    private void attachToolbars(BasePagingLoader<PagingLoadResult<User>> loader) {
+    private void attachToolbars() {
         PagingToolBar pagingToolBar = new PagingToolBar(10);
         pagingToolBar.bind(loader);
         ToolBar toolBar = new ToolBar();
         view.setHeading("Editable User Grid");
         view.setFrame(true);
-        view.setSize(800, 300);
+        view.setSize(800, 350);
         view.setLayout(new FitLayout());
         view.setBottomComponent(pagingToolBar);
         view.setTopComponent(toolBar);
-        toolBar.add(makeNewUserBtn());
-        toolBar.add(makeEditBtn());
+        toolBar.add(makeNewEditUserBtn("New"));
+        toolBar.add(makeNewEditUserBtn("Edit"));
         toolBar.add(makeDeleteBtn());
     }
 
-    private void styleGrid(ListStore<User> listStore) {
+    private void styleGrid() {
         grid.setStripeRows(true);
         grid.setColumnLines(true);
-        grid.getSelectionModel().bind(listStore);
+        grid.getSelectionModel().bind(store);
         grid.getSelectionModel().setSelectionMode(Style.SelectionMode.SINGLE);
-        grid.setSize(700, 300);
+        grid.setSize(700, 350);
     }
 
-    private void addGridOnAttachListener(final BasePagingLoader<PagingLoadResult<User>> loader) {
+    private void addGridOnAttachListener() {
         grid.addListener(Events.Attach, new Listener<GridEvent<User>>() {
             @Override
             public void handleEvent(GridEvent<User> baseEvent) {
@@ -129,15 +131,9 @@ public class UserTable extends LayoutContainer {
         });
     }
 
-    private Button makeNewUserBtn() {
-        Button button = new Button("New");
-        addNewUserButtonListener(button);
-        return button;
-    }
-
-    private Button makeEditBtn() {
-        Button button = new Button("Edit");
-        addEditButtonListener(button);
+    private Button makeNewEditUserBtn(String name) {
+        Button button = new Button(name);
+        addAddEditButtonListener(button);
         return button;
     }
 
@@ -147,22 +143,11 @@ public class UserTable extends LayoutContainer {
         return button;
     }
 
-    private void addEditButtonListener(Button button) {
+    private void addAddEditButtonListener(Button button) {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                add(new EditForm(grid, userServiceAsync, roleServiceAsync));
-                layout(true);
-            }
-        });
-    }
-
-    private void addNewUserButtonListener(Button button) {
-        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
-            @Override
-            public void componentSelected(ButtonEvent ce) {
-                add(new EditForm(grid, userServiceAsync, roleServiceAsync));
-                layout(true);
+                showUserFormWindow();
             }
         });
     }
@@ -203,6 +188,15 @@ public class UserTable extends LayoutContainer {
         User user = new User();
         user.setId((Long) record.get("id"));
         return user;
+    }
+
+    private void showUserFormWindow() {
+        view.setEnabled(false);
+        com.extjs.gxt.ui.client.widget.Window window =
+                new com.extjs.gxt.ui.client.widget.Window();
+        window.add(new UserForm(grid, userServiceAsync, roleServiceAsync, window, view));
+        window.setWidth(350);
+        window.show();
     }
 
 }
