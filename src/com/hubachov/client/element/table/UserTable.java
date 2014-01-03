@@ -8,6 +8,8 @@ import com.extjs.gxt.ui.client.store.Record;
 import com.extjs.gxt.ui.client.widget.*;
 import com.extjs.gxt.ui.client.widget.button.Button;
 import com.extjs.gxt.ui.client.widget.form.CheckBox;
+import com.extjs.gxt.ui.client.widget.form.ComboBox;
+import com.extjs.gxt.ui.client.widget.form.SimpleComboBox;
 import com.extjs.gxt.ui.client.widget.grid.*;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
 import com.extjs.gxt.ui.client.widget.toolbar.PagingToolBar;
@@ -34,7 +36,7 @@ public class UserTable extends LayoutContainer {
     private ListStore<User> store;
     private BasePagingLoader<PagingLoadResult<User>> loader;
     private RpcProxy<BasePagingLoadResult<User>> proxy;
-    private CheckColumnConfig plugin;
+    private CheckBoxSelectionModel plugin = new CheckBoxSelectionModel<User>();
     private ContentPanel view = new ContentPanel();
 
     public UserTable(UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
@@ -49,7 +51,7 @@ public class UserTable extends LayoutContainer {
         loader = new BasePagingLoader<PagingLoadResult<User>>(proxy);
         configureColumns();
         store = new ListStore<User>(loader);
-        grid = new EditorGrid<User>(store, new ColumnModel(columns));
+        grid = new Grid<User>(store, new ColumnModel(columns));
         addGridOnAttachListener();
         attachToolbars();
         styleGrid();
@@ -59,6 +61,7 @@ public class UserTable extends LayoutContainer {
 
     private void configureColumns() {
         columns = new ArrayList<ColumnConfig>();
+        columns.add(plugin.getColumn());
         columns.add(new ColumnConfig("id", "Id", 30));
         columns.add(new ColumnConfig("login", "Login", 100));
         columns.add(new ColumnConfig("email", "Email", 100));
@@ -66,9 +69,6 @@ public class UserTable extends LayoutContainer {
         columns.add(new ColumnConfig("lastName", "Last Name", 100));
         columns.add(new ColumnConfig("birthday", "Birthday", 100));
         columns.add(new ColumnConfig("role", "Role", 120));
-        plugin = new CheckColumnConfig("remove", "Delete?", 100);
-        plugin.setEditor(new CellEditor(new CheckBox()));
-        columns.add(plugin);
         alignColumns(Style.HorizontalAlignment.LEFT);
     }
 
@@ -99,8 +99,8 @@ public class UserTable extends LayoutContainer {
     private void styleGrid() {
         grid.setStripeRows(true);
         grid.addPlugin(plugin);
+        grid.setSelectionModel(plugin);
         grid.getSelectionModel().bind(store);
-        grid.getSelectionModel().setSelectionMode(Style.SelectionMode.SINGLE);
         grid.setSize(700, 350);
     }
 
@@ -162,18 +162,15 @@ public class UserTable extends LayoutContainer {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                final List<Record> records = store.getModifiedRecords();
-                if (!records.isEmpty()) {
+                final List<User> selectedUsers = plugin.getSelectedItems();
+                if (!selectedUsers.isEmpty()) {
                     MessageBox.confirm("Delete?", "Are you sure?", new Listener<MessageBoxEvent>() {
                         @Override
                         public void handleEvent(MessageBoxEvent be) {
                             Button btn = be.getButtonClicked();
                             if (Dialog.YES.equalsIgnoreCase(btn.getItemId())) {
-                                for (Record record : records) {
-                                    Boolean isChecked = (Boolean) record.get("remove");
-                                    if (isChecked) {
-                                        userServiceAsync.remove(extractUser(record), new DeleteUserAsyncCallback<Void>(grid));
-                                    }
+                                for (User user : selectedUsers) {
+                                    userServiceAsync.remove(user, new DeleteUserAsyncCallback<Void>(grid));
                                 }
                             }
                         }
@@ -188,12 +185,6 @@ public class UserTable extends LayoutContainer {
         while (iterator.hasNext()) {
             iterator.next().setAlignment(side);
         }
-    }
-
-    private User extractUser(Record record) {
-        User user = new User();
-        user.setId((Long) record.get("id"));
-        return user;
     }
 
     private void showUserFormWindow(User user) {
