@@ -34,6 +34,7 @@ public class UserTable extends LayoutContainer {
     private ListStore<User> store;
     private BasePagingLoader<PagingLoadResult<User>> loader;
     private RpcProxy<BasePagingLoadResult<User>> proxy;
+    private CheckColumnConfig plugin;
     private ContentPanel view = new ContentPanel();
 
     public UserTable(UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
@@ -65,9 +66,9 @@ public class UserTable extends LayoutContainer {
         columns.add(new ColumnConfig("lastName", "Last Name", 100));
         columns.add(new ColumnConfig("birthday", "Birthday", 100));
         columns.add(new ColumnConfig("role", "Role", 120));
-        CheckColumnConfig checkColumnConfig = new CheckColumnConfig("remove", "Delete?", 100);
-        checkColumnConfig.setEditor(new CellEditor(new CheckBox()));
-        columns.add(checkColumnConfig);
+        plugin = new CheckColumnConfig("remove", "Delete?", 100);
+        plugin.setEditor(new CellEditor(new CheckBox()));
+        columns.add(plugin);
         alignColumns(Style.HorizontalAlignment.LEFT);
     }
 
@@ -97,7 +98,7 @@ public class UserTable extends LayoutContainer {
 
     private void styleGrid() {
         grid.setStripeRows(true);
-        grid.setColumnLines(true);
+        grid.addPlugin(plugin);
         grid.getSelectionModel().bind(store);
         grid.getSelectionModel().setSelectionMode(Style.SelectionMode.SINGLE);
         grid.setSize(700, 350);
