@@ -19,8 +19,7 @@ public class Role extends BaseModel implements Serializable {
     }
 
     public Role(String name) {
-        set("name", name);
-        setName(name);
+        this(0, name);
     }
 
     public long getId() {

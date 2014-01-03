@@ -4,13 +4,13 @@ import com.extjs.gxt.ui.client.Style;
 import com.extjs.gxt.ui.client.data.*;
 import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
-import com.extjs.gxt.ui.client.store.Record;
 import com.extjs.gxt.ui.client.widget.*;
 import com.extjs.gxt.ui.client.widget.button.Button;
-import com.extjs.gxt.ui.client.widget.form.CheckBox;
-import com.extjs.gxt.ui.client.widget.form.ComboBox;
-import com.extjs.gxt.ui.client.widget.form.SimpleComboBox;
-import com.extjs.gxt.ui.client.widget.grid.*;
+import com.extjs.gxt.ui.client.widget.grid.CheckBoxSelectionModel;
+import com.extjs.gxt.ui.client.widget.grid.ColumnConfig;
+import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
+import com.extjs.gxt.ui.client.widget.grid.Grid;
+import com.extjs.gxt.ui.client.widget.grid.filters.*;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
 import com.extjs.gxt.ui.client.widget.toolbar.PagingToolBar;
 import com.extjs.gxt.ui.client.widget.toolbar.ToolBar;
@@ -19,14 +19,12 @@ import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.hubachov.client.element.form.UserForm;
+import com.hubachov.client.model.Role;
 import com.hubachov.client.model.User;
 import com.hubachov.client.service.RoleServiceAsync;
 import com.hubachov.client.service.UserServiceAsync;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class UserTable extends LayoutContainer {
     private final UserServiceAsync userServiceAsync;
@@ -36,7 +34,7 @@ public class UserTable extends LayoutContainer {
     private ListStore<User> store;
     private BasePagingLoader<PagingLoadResult<User>> loader;
     private RpcProxy<BasePagingLoadResult<User>> proxy;
-    private CheckBoxSelectionModel plugin = new CheckBoxSelectionModel<User>();
+    private CheckBoxSelectionModel selectionRowPlugin = new CheckBoxSelectionModel<User>();
     private ContentPanel view = new ContentPanel();
 
     public UserTable(UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
@@ -61,7 +59,7 @@ public class UserTable extends LayoutContainer {
 
     private void configureColumns() {
         columns = new ArrayList<ColumnConfig>();
-        columns.add(plugin.getColumn());
+        columns.add(selectionRowPlugin.getColumn());
         columns.add(new ColumnConfig("id", "Id", 30));
         columns.add(new ColumnConfig("login", "Login", 100));
         columns.add(new ColumnConfig("email", "Email", 100));
@@ -96,10 +94,51 @@ public class UserTable extends LayoutContainer {
         toolBar.add(makeDeleteBtn());
     }
 
+    private GridFilters attachFilters() {
+        GridFilters filters = new GridFilters();
+        filters.setLocal(true);
+        filters.addFilter(new NumericFilter("id"));
+        filters.addFilter(new StringFilter("login"));
+        filters.addFilter(new StringFilter("email"));
+        filters.addFilter(new StringFilter("firstName"));
+        filters.addFilter(new StringFilter("lastName"));
+        filters.addFilter(new DateFilter("birthday"));
+
+//        RpcProxy<BasePagingLoadResult<Role>> proxy = new RpcProxy<BasePagingLoadResult<Role>>() {
+//            @Override
+//            protected void load(Object loadConfig, AsyncCallback<BasePagingLoadResult<Role>> callback) {
+//                roleServiceAsync.getRoles((BasePagingLoadConfig) loadConfig, callback);
+//            }
+//        };
+//        BaseListLoader<ListLoadResult<ModelData>> loader = new BaseListLoader<ListLoadResult<ModelData>>(proxy);
+//        ListStore<Role> roleStore = new ListStore<Role>(loader);
+//        ListFilter roleFilter = new ListFilter("role", roleStore);
+//        loader.load();
+
+        filters.addFilter(attachRoleFilter());
+        return filters;
+    }
+
+    private ListFilter attachRoleFilter() {
+        ListStore<Role> roleStore = new ListStore<Role>();
+        roleStore.add(new Role("admin"));
+        roleStore.add(new Role("user"));
+        ListFilter roleFilter = new ListFilter("role", roleStore);
+        roleFilter.setDisplayProperty("name");
+        return roleFilter;
+    }
+
+    private ModelData role(String name) {
+        ModelData model = new BaseModelData();
+        model.set("name", name);
+        return model;
+    }
+
     private void styleGrid() {
         grid.setStripeRows(true);
-        grid.addPlugin(plugin);
-        grid.setSelectionModel(plugin);
+        grid.addPlugin(selectionRowPlugin);
+        grid.addPlugin(attachFilters());
+        grid.setSelectionModel(selectionRowPlugin);
         grid.getSelectionModel().bind(store);
         grid.setSize(700, 350);
     }
@@ -162,7 +201,7 @@ public class UserTable extends LayoutContainer {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                final List<User> selectedUsers = plugin.getSelectedItems();
+                final List<User> selectedUsers = selectionRowPlugin.getSelectedItems();
                 if (!selectedUsers.isEmpty()) {
                     MessageBox.confirm("Delete?", "Are you sure?", new Listener<MessageBoxEvent>() {
                         @Override
