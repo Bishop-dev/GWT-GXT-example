@@ -90,8 +90,8 @@ public class UserTable extends LayoutContainer {
         view.setLayout(new FitLayout());
         view.setBottomComponent(pagingToolBar);
         view.setTopComponent(toolBar);
-        toolBar.add(makeNewEditUserBtn("New"));
-        toolBar.add(makeNewEditUserBtn("Edit"));
+        toolBar.add(makeNewEditUserBtn("New", "add-btn"));
+        toolBar.add(makeNewEditUserBtn("Edit", "edit-btn"));
         toolBar.add(makeDeleteBtn());
     }
 
@@ -131,8 +131,9 @@ public class UserTable extends LayoutContainer {
         });
     }
 
-    private Button makeNewEditUserBtn(String name) {
+    private Button makeNewEditUserBtn(String name, String id) {
         Button button = new Button(name);
+        button.setId(id);
         addAddEditButtonListener(button);
         return button;
     }
@@ -143,11 +144,15 @@ public class UserTable extends LayoutContainer {
         return button;
     }
 
-    private void addAddEditButtonListener(Button button) {
+    private void addAddEditButtonListener(final Button button) {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                showUserFormWindow();
+                if (button.getId().equals("edit-btn")) {
+                    showUserFormWindow(grid.getSelectionModel().getSelectedItem());
+                } else {
+                    showUserFormWindow(null);
+                }
             }
         });
     }
@@ -190,11 +195,12 @@ public class UserTable extends LayoutContainer {
         return user;
     }
 
-    private void showUserFormWindow() {
+    private void showUserFormWindow(User user) {
         view.setEnabled(false);
         com.extjs.gxt.ui.client.widget.Window window =
                 new com.extjs.gxt.ui.client.widget.Window();
-        window.add(new UserForm(grid, userServiceAsync, roleServiceAsync, window, view));
+        window.setClosable(false);
+        window.add(new UserForm(grid, user, userServiceAsync, roleServiceAsync, window, view));
         window.setWidth(350);
         window.show();
     }

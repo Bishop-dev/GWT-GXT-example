@@ -41,11 +41,11 @@ public class UserForm extends LayoutContainer {
     private RoleServiceAsync roleServiceAsync;
     private com.extjs.gxt.ui.client.widget.Window window;
 
-    public UserForm(Grid<User> grid, UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync,
+    public UserForm(Grid<User> grid, User user, UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync,
                     com.extjs.gxt.ui.client.widget.Window window, ContentPanel view) {
         this.userServiceAsync = userServiceAsync;
         this.roleServiceAsync = roleServiceAsync;
-        this.user = grid.getSelectionModel().getSelectedItem();
+        this.user = user;
         this.grid = grid;
         this.window = window;
         this.view = view;
