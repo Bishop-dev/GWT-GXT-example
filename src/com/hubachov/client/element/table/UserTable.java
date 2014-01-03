@@ -4,11 +4,11 @@ import com.extjs.gxt.ui.client.Style;
 import com.extjs.gxt.ui.client.data.*;
 import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
+import com.extjs.gxt.ui.client.store.Record;
 import com.extjs.gxt.ui.client.widget.*;
 import com.extjs.gxt.ui.client.widget.button.Button;
-import com.extjs.gxt.ui.client.widget.grid.ColumnConfig;
-import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
-import com.extjs.gxt.ui.client.widget.grid.Grid;
+import com.extjs.gxt.ui.client.widget.form.CheckBox;
+import com.extjs.gxt.ui.client.widget.grid.*;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
 import com.extjs.gxt.ui.client.widget.toolbar.PagingToolBar;
 import com.extjs.gxt.ui.client.widget.toolbar.ToolBar;
@@ -16,7 +16,6 @@ import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.DialogBox;
 import com.hubachov.client.element.form.EditForm;
 import com.hubachov.client.model.User;
 import com.hubachov.client.service.RoleServiceAsync;
@@ -31,6 +30,8 @@ public class UserTable extends LayoutContainer {
     private final UserServiceAsync userServiceAsync;
     private final RoleServiceAsync roleServiceAsync;
     private Grid<User> grid;
+    private List<ColumnConfig> columns;
+    private ListStore<User> store;
     private ContentPanel view = new ContentPanel();
 
     public UserTable(UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
@@ -42,8 +43,9 @@ public class UserTable extends LayoutContainer {
     protected void onRender(Element parent, int index) {
         super.onRender(parent, index);
         BasePagingLoader<PagingLoadResult<User>> loader = new BasePagingLoader<PagingLoadResult<User>>(initProxy());
-        ListStore<User> store = new ListStore<User>(loader);
-        grid = new Grid<User>(store, new ColumnModel(configureColumns()));
+        configureColumns();
+        store = new ListStore<User>(loader);
+        grid = new EditorGrid<User>(store, new ColumnModel(columns));
         addGridOnAttachListener(loader);
         attachToolbars(loader);
         styleGrid(store);
@@ -51,17 +53,20 @@ public class UserTable extends LayoutContainer {
         add(view);
     }
 
-    private List<ColumnConfig> configureColumns() {
-        List<ColumnConfig> configs = new ArrayList<ColumnConfig>();
-        configs.add(new ColumnConfig("id", "Id", 30));
-        configs.add(new ColumnConfig("login", "Login", 100));
-        configs.add(new ColumnConfig("email", "Email", 100));
-        configs.add(new ColumnConfig("firstName", "First Name", 100));
-        configs.add(new ColumnConfig("lastName", "Last Name", 100));
-        configs.add(new ColumnConfig("birthday", "Birthday", 100));
-        configs.add(new ColumnConfig("role", "Role", 120));
-        alignColumns(configs, Style.HorizontalAlignment.LEFT);
-        return configs;
+    private void configureColumns() {
+        columns = new ArrayList<ColumnConfig>();
+        columns.add(new ColumnConfig("id", "Id", 30));
+        columns.add(new ColumnConfig("login", "Login", 100));
+        columns.add(new ColumnConfig("email", "Email", 100));
+        columns.add(new ColumnConfig("firstName", "First Name", 100));
+        columns.add(new ColumnConfig("lastName", "Last Name", 100));
+        columns.add(new ColumnConfig("birthday", "Birthday", 100));
+        columns.add(new ColumnConfig("role", "Role", 120));
+        CheckColumnConfig checkColumnConfig = new CheckColumnConfig("remove", "Delete?", 100);
+        CellEditor editor = new CellEditor(new CheckBox());
+        checkColumnConfig.setEditor(editor);
+        columns.add(checkColumnConfig);
+        alignColumns(Style.HorizontalAlignment.LEFT);
     }
 
     private RpcProxy<BasePagingLoadResult<User>> initProxy() {
@@ -79,7 +84,7 @@ public class UserTable extends LayoutContainer {
         ToolBar toolBar = new ToolBar();
         view.setHeading("Editable User Grid");
         view.setFrame(true);
-        view.setSize(700, 300);
+        view.setSize(800, 300);
         view.setLayout(new FitLayout());
         view.setBottomComponent(pagingToolBar);
         view.setTopComponent(toolBar);
@@ -93,7 +98,7 @@ public class UserTable extends LayoutContainer {
         grid.setColumnLines(true);
         grid.getSelectionModel().bind(listStore);
         grid.getSelectionModel().setSelectionMode(Style.SelectionMode.SINGLE);
-        grid.setSize(600, 300);
+        grid.setSize(700, 300);
     }
 
     private void addGridOnAttachListener(final BasePagingLoader<PagingLoadResult<User>> loader) {
@@ -166,14 +171,19 @@ public class UserTable extends LayoutContainer {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                final User user = grid.getSelectionModel().getSelectedItem();
-                if (user != null) {
+                final List<Record> records = store.getModifiedRecords();
+                if (!records.isEmpty()) {
                     MessageBox.confirm("Delete?", "Are you sure?", new Listener<MessageBoxEvent>() {
                         @Override
                         public void handleEvent(MessageBoxEvent be) {
                             Button btn = be.getButtonClicked();
                             if (Dialog.YES.equalsIgnoreCase(btn.getItemId())) {
-                                userServiceAsync.remove(user, new DeleteUserAsyncCallback<Void>(grid));
+                                for (Record record : records) {
+                                    Boolean isChecked = (Boolean) record.get("remove");
+                                    if (isChecked) {
+                                        userServiceAsync.remove(extractUser(record), new DeleteUserAsyncCallback<Void>(grid));
+                                    }
+                                }
                             }
                         }
                     });
@@ -182,11 +192,17 @@ public class UserTable extends LayoutContainer {
         });
     }
 
-    private void alignColumns(List<ColumnConfig> columns, Style.HorizontalAlignment side) {
+    private void alignColumns(Style.HorizontalAlignment side) {
         Iterator<ColumnConfig> iterator = columns.iterator();
         while (iterator.hasNext()) {
             iterator.next().setAlignment(side);
         }
+    }
+
+    private User extractUser(Record record) {
+        User user = new User();
+        user.setId((Long) record.get("id"));
+        return user;
     }
 
 }

@@ -18,7 +18,7 @@ import org.apache.log4j.Logger;
 public class DBUtil {
     private static Logger log = Logger.getLogger(DBUtil.class);
     private static DataSource dataSource;
-    private static DBUtil instance;
+    private static volatile DBUtil instance;
     private static String propertyFile = "/server_resources/db.properties";
 
     private DBUtil() {
@@ -35,7 +35,11 @@ public class DBUtil {
 
     public static DBUtil getInstance() {
         if (instance == null) {
-            instance = new DBUtil();
+            synchronized (DBUtil.class) {
+                if (instance == null) {
+                    instance = new DBUtil();
+                }
+            }
         }
         return instance;
     }
