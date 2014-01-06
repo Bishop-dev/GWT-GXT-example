@@ -1,16 +1,31 @@
 package com.hubachov.client.element.table;
 
 import com.extjs.gxt.ui.client.Style;
-import com.extjs.gxt.ui.client.data.*;
+import com.extjs.gxt.ui.client.data.BasePagingLoader;
+import com.extjs.gxt.ui.client.data.BasePagingLoadConfig;
+import com.extjs.gxt.ui.client.data.ModelData;
+import com.extjs.gxt.ui.client.data.BaseModelData;
+import com.extjs.gxt.ui.client.data.BasePagingLoadResult;
+import com.extjs.gxt.ui.client.data.PagingLoadResult;
+import com.extjs.gxt.ui.client.data.PagingLoadConfig;
+import com.extjs.gxt.ui.client.data.RpcProxy;
 import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
-import com.extjs.gxt.ui.client.widget.*;
+import com.extjs.gxt.ui.client.widget.LayoutContainer;
+import com.extjs.gxt.ui.client.widget.MessageBox;
+import com.extjs.gxt.ui.client.widget.Dialog;
+import com.extjs.gxt.ui.client.widget.Info;
+import com.extjs.gxt.ui.client.widget.ContentPanel;
 import com.extjs.gxt.ui.client.widget.button.Button;
 import com.extjs.gxt.ui.client.widget.grid.CheckBoxSelectionModel;
 import com.extjs.gxt.ui.client.widget.grid.ColumnConfig;
 import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
 import com.extjs.gxt.ui.client.widget.grid.Grid;
-import com.extjs.gxt.ui.client.widget.grid.filters.*;
+import com.extjs.gxt.ui.client.widget.grid.filters.DateFilter;
+import com.extjs.gxt.ui.client.widget.grid.filters.ListFilter;
+import com.extjs.gxt.ui.client.widget.grid.filters.StringFilter;
+import com.extjs.gxt.ui.client.widget.grid.filters.NumericFilter;
+import com.extjs.gxt.ui.client.widget.grid.filters.GridFilters;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
 import com.extjs.gxt.ui.client.widget.toolbar.PagingToolBar;
 import com.extjs.gxt.ui.client.widget.toolbar.ToolBar;
@@ -24,7 +39,10 @@ import com.hubachov.client.model.User;
 import com.hubachov.client.service.RoleServiceAsync;
 import com.hubachov.client.service.UserServiceAsync;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Iterator;
 
 public class UserTable extends LayoutContainer {
     private final UserServiceAsync userServiceAsync;
@@ -36,6 +54,7 @@ public class UserTable extends LayoutContainer {
     private RpcProxy<BasePagingLoadResult<User>> proxy;
     private CheckBoxSelectionModel selectionRowPlugin = new CheckBoxSelectionModel<User>();
     private ContentPanel view = new ContentPanel();
+    private static final int USERS_ON_PAGE = 10;
 
     public UserTable(UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
         this.userServiceAsync = userServiceAsync;
@@ -46,15 +65,29 @@ public class UserTable extends LayoutContainer {
     protected void onRender(Element parent, int index) {
         super.onRender(parent, index);
         initProxy();
-        loader = new BasePagingLoader<PagingLoadResult<User>>(proxy);
+        initLoader();
         configureColumns();
-        store = new ListStore<User>(loader);
-        grid = new Grid<User>(store, new ColumnModel(columns));
+        createGrid();
         addGridOnAttachListener();
         attachToolbars();
         styleGrid();
-        view.add(grid);
         add(view);
+    }
+
+    private void initLoader() {
+        loader = new BasePagingLoader<PagingLoadResult<User>>(proxy);
+        loader.setRemoteSort(true);
+    }
+
+    private void createGrid() {
+        store = new ListStore<User>(loader);
+        grid = new Grid<User>(store, new ColumnModel(columns));
+        grid.addListener(Events.RowDoubleClick, new Listener<BaseEvent>() {
+            @Override
+            public void handleEvent(BaseEvent be) {
+                showUserFormWindow(((GridEvent<User>) be).getModel());
+            }
+        });
     }
 
     private void configureColumns() {
@@ -80,7 +113,7 @@ public class UserTable extends LayoutContainer {
     }
 
     private void attachToolbars() {
-        PagingToolBar pagingToolBar = new PagingToolBar(10);
+        PagingToolBar pagingToolBar = new PagingToolBar(USERS_ON_PAGE);
         pagingToolBar.bind(loader);
         ToolBar toolBar = new ToolBar();
         view.setHeading("Editable User Grid");
@@ -128,12 +161,6 @@ public class UserTable extends LayoutContainer {
         return roleFilter;
     }
 
-    private ModelData role(String name) {
-        ModelData model = new BaseModelData();
-        model.set("name", name);
-        return model;
-    }
-
     private void styleGrid() {
         grid.setStripeRows(true);
         grid.addPlugin(selectionRowPlugin);
@@ -141,6 +168,7 @@ public class UserTable extends LayoutContainer {
         grid.setSelectionModel(selectionRowPlugin);
         grid.getSelectionModel().bind(store);
         grid.setSize(700, 350);
+        view.add(grid);
     }
 
     private void addGridOnAttachListener() {
