@@ -2,16 +2,18 @@ package com.hubachov.client.element.table;
 
 import com.extjs.gxt.ui.client.Style;
 import com.extjs.gxt.ui.client.data.*;
-import com.extjs.gxt.ui.client.event.Events;
-import com.extjs.gxt.ui.client.event.GridEvent;
-import com.extjs.gxt.ui.client.event.Listener;
+import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
+import com.extjs.gxt.ui.client.store.Record;
 import com.extjs.gxt.ui.client.widget.ContentPanel;
+import com.extjs.gxt.ui.client.widget.Info;
 import com.extjs.gxt.ui.client.widget.LayoutContainer;
+import com.extjs.gxt.ui.client.widget.button.Button;
 import com.extjs.gxt.ui.client.widget.form.TextField;
 import com.extjs.gxt.ui.client.widget.grid.*;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
 import com.extjs.gxt.ui.client.widget.toolbar.PagingToolBar;
+import com.extjs.gxt.ui.client.widget.toolbar.ToolBar;
 import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -29,7 +31,7 @@ public class RoleTable extends LayoutContainer {
     private PagingLoader<PagingLoadResult<Role>> loader;
     private List<ColumnConfig> columnConfigList;
     private Grid<Role> grid;
-    private ListStore<Role> listStore;
+    private ListStore<Role> store;
     private ContentPanel view = new ContentPanel();
 
     public RoleTable(RoleServiceAsync roleServiceAsync) {
@@ -43,11 +45,65 @@ public class RoleTable extends LayoutContainer {
         initLoader();
         attachToolbar();
         configureColumns();
-        grid = new EditorGrid<Role>(listStore, new ColumnModel(columnConfigList));
+        grid = new EditorGrid<Role>(store, new ColumnModel(columnConfigList));
         addOnAttachGridListener();
         styleGrid();
         styleView();
         add(view);
+    }
+
+    private Button makeSaveBtn() {
+        Button button = new Button("Save");
+        addSaveRoleListener(button);
+        return button;
+    }
+
+    private Button makeResetBtn() {
+        Button button = new Button("Reset");
+        addResetChangesListener(button);
+        return button;
+    }
+
+    private void addSaveRoleListener(Button button) {
+        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
+            @Override
+            public void componentSelected(ButtonEvent ce) {
+                List<Role> roles = new ArrayList<Role>();
+                for (Record record : store.getModifiedRecords()) {
+                    Role role = (Role) record.getModel();
+                    String newName = role.get("name");
+                    role.setName(newName);
+                    roles.add(role);
+                }
+                //to prevent excess service calling
+                if (!roles.isEmpty()) {
+                    roleServiceAsync.update(roles, getUpdateAsyncCallback());
+                }
+            }
+        });
+    }
+
+    private void addResetChangesListener(Button button) {
+        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
+            @Override
+            public void componentSelected(ButtonEvent ce) {
+                store.rejectChanges();
+            }
+        });
+    }
+
+    private AsyncCallback<Void> getUpdateAsyncCallback() {
+        return new AsyncCallback<Void>() {
+            @Override
+            public void onFailure(Throwable caught) {
+                Info.display("Error", "Can't update");
+            }
+
+            @Override
+            public void onSuccess(Void result) {
+                store.commitChanges();
+            }
+        };
     }
 
     private void initProxy() {
@@ -89,35 +145,48 @@ public class RoleTable extends LayoutContainer {
         grid.addListener(Events.Attach, new Listener<GridEvent<Role>>() {
             @Override
             public void handleEvent(GridEvent<Role> baseEvent) {
-                Scheduler.get().scheduleDeferred(new Scheduler.ScheduledCommand() {
-                    @Override
-                    public void execute() {
-                        PagingLoadConfig config = new BasePagingLoadConfig();
-                        config.setOffset(0);
-                        config.setLimit(10);
-                        Map<String, Object> state = grid.getState();
-                        if (state.containsKey("offset")) {
-                            int offset = (Integer) state.get("offset");
-                            int limit = (Integer) state.get("limit");
-                            config.setLimit(limit);
-                            config.setOffset(offset);
-                        }
-                        if (state.containsKey("sortField")) {
-                            config.setSortField((String) state.get("sortField"));
-                            config.setSortDir(Style.SortDir.valueOf((String) state.get("sortDir")));
-                        }
-                        loader.load(config);
-                    }
-                });
+                Scheduler.get().scheduleDeferred(makeOnAttachScheduler());
             }
         });
     }
 
+    private Scheduler.ScheduledCommand makeOnAttachScheduler() {
+        return new Scheduler.ScheduledCommand() {
+            @Override
+            public void execute() {
+                PagingLoadConfig config = new BasePagingLoadConfig();
+                config.setOffset(0);
+                config.setLimit(ROLES_ON_PAGE);
+                Map<String, Object> state = grid.getState();
+                if (state.containsKey("offset")) {
+                    int offset = (Integer) state.get("offset");
+                    int limit = (Integer) state.get("limit");
+                    config.setLimit(limit);
+                    config.setOffset(offset);
+                }
+                if (state.containsKey("sortField")) {
+                    config.setSortField((String) state.get("sortField"));
+                    config.setSortDir(Style.SortDir.valueOf((String) state.get("sortDir")));
+                }
+                loader.load(config);
+            }
+        };
+    }
+
     private void attachToolbar() {
-        listStore = new ListStore<Role>(loader);
-        PagingToolBar toolBar = new PagingToolBar(ROLES_ON_PAGE);
-        toolBar.bind(loader);
-        view.setBottomComponent(toolBar);
+        store = new ListStore<Role>(loader);
+        PagingToolBar pagingToolBar = new PagingToolBar(ROLES_ON_PAGE);
+        pagingToolBar.bind(loader);
+        view.setBottomComponent(pagingToolBar);
+        ToolBar toolBar = new ToolBar();
+        toolBar.add(makeSaveBtn());
+        toolBar.add(makeResetBtn());
+        view.setHeading("Editable Role Grid");
+        view.setFrame(true);
+        view.setSize(800, 350);
+        view.setLayout(new FitLayout());
+        view.setBottomComponent(pagingToolBar);
+        view.setTopComponent(toolBar);
     }
 
     private void styleView() {

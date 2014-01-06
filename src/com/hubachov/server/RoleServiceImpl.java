@@ -42,4 +42,11 @@ public class RoleServiceImpl extends RemoteServiceServlet implements RoleService
         }
         return new BasePagingLoadResult<Role>(result, start, roles.size());
     }
+
+    @Override
+    public void update(List<Role> roles) throws Exception {
+        for (Role role : roles) {
+            dao.update(role);
+        }
+    }
 }

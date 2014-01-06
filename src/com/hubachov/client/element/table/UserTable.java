@@ -1,31 +1,16 @@
 package com.hubachov.client.element.table;
 
 import com.extjs.gxt.ui.client.Style;
-import com.extjs.gxt.ui.client.data.BasePagingLoader;
-import com.extjs.gxt.ui.client.data.BasePagingLoadConfig;
-import com.extjs.gxt.ui.client.data.ModelData;
-import com.extjs.gxt.ui.client.data.BaseModelData;
-import com.extjs.gxt.ui.client.data.BasePagingLoadResult;
-import com.extjs.gxt.ui.client.data.PagingLoadResult;
-import com.extjs.gxt.ui.client.data.PagingLoadConfig;
-import com.extjs.gxt.ui.client.data.RpcProxy;
+import com.extjs.gxt.ui.client.data.*;
 import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
-import com.extjs.gxt.ui.client.widget.LayoutContainer;
-import com.extjs.gxt.ui.client.widget.MessageBox;
-import com.extjs.gxt.ui.client.widget.Dialog;
-import com.extjs.gxt.ui.client.widget.Info;
-import com.extjs.gxt.ui.client.widget.ContentPanel;
+import com.extjs.gxt.ui.client.widget.*;
 import com.extjs.gxt.ui.client.widget.button.Button;
 import com.extjs.gxt.ui.client.widget.grid.CheckBoxSelectionModel;
 import com.extjs.gxt.ui.client.widget.grid.ColumnConfig;
 import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
 import com.extjs.gxt.ui.client.widget.grid.Grid;
-import com.extjs.gxt.ui.client.widget.grid.filters.DateFilter;
-import com.extjs.gxt.ui.client.widget.grid.filters.ListFilter;
-import com.extjs.gxt.ui.client.widget.grid.filters.StringFilter;
-import com.extjs.gxt.ui.client.widget.grid.filters.NumericFilter;
-import com.extjs.gxt.ui.client.widget.grid.filters.GridFilters;
+import com.extjs.gxt.ui.client.widget.grid.filters.*;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
 import com.extjs.gxt.ui.client.widget.toolbar.PagingToolBar;
 import com.extjs.gxt.ui.client.widget.toolbar.ToolBar;
@@ -39,10 +24,10 @@ import com.hubachov.client.model.User;
 import com.hubachov.client.service.RoleServiceAsync;
 import com.hubachov.client.service.UserServiceAsync;
 
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class UserTable extends LayoutContainer {
     private final UserServiceAsync userServiceAsync;
@@ -175,28 +160,32 @@ public class UserTable extends LayoutContainer {
         grid.addListener(Events.Attach, new Listener<GridEvent<User>>() {
             @Override
             public void handleEvent(GridEvent<User> baseEvent) {
-                Scheduler.get().scheduleDeferred(new Scheduler.ScheduledCommand() {
-                    @Override
-                    public void execute() {
-                        PagingLoadConfig config = new BasePagingLoadConfig();
-                        config.setOffset(0);
-                        config.setLimit(10);
-                        Map<String, Object> state = grid.getState();
-                        if (state.containsKey("offset")) {
-                            int offset = (Integer) state.get("offset");
-                            int limit = (Integer) state.get("limit");
-                            config.setLimit(limit);
-                            config.setOffset(offset);
-                        }
-                        if (state.containsKey("sortField")) {
-                            config.setSortField((String) state.get("sortField"));
-                            config.setSortDir(Style.SortDir.valueOf((String) state.get("sortDir")));
-                        }
-                        loader.load(config);
-                    }
-                });
+                Scheduler.get().scheduleDeferred(makeGridOnAttachScheduler());
             }
         });
+    }
+
+    private Scheduler.ScheduledCommand makeGridOnAttachScheduler() {
+        return new Scheduler.ScheduledCommand() {
+            @Override
+            public void execute() {
+                PagingLoadConfig config = new BasePagingLoadConfig();
+                config.setOffset(0);
+                config.setLimit(10);
+                Map<String, Object> state = grid.getState();
+                if (state.containsKey("offset")) {
+                    int offset = (Integer) state.get("offset");
+                    int limit = (Integer) state.get("limit");
+                    config.setLimit(limit);
+                    config.setOffset(offset);
+                }
+                if (state.containsKey("sortField")) {
+                    config.setSortField((String) state.get("sortField"));
+                    config.setSortDir(Style.SortDir.valueOf((String) state.get("sortDir")));
+                }
+                loader.load(config);
+            }
+        };
     }
 
     private Button makeNewEditUserBtn(String name, String id) {
@@ -231,20 +220,39 @@ public class UserTable extends LayoutContainer {
             public void componentSelected(ButtonEvent ce) {
                 final List<User> selectedUsers = selectionRowPlugin.getSelectedItems();
                 if (!selectedUsers.isEmpty()) {
-                    MessageBox.confirm("Delete?", "Are you sure?", new Listener<MessageBoxEvent>() {
-                        @Override
-                        public void handleEvent(MessageBoxEvent be) {
-                            Button btn = be.getButtonClicked();
-                            if (Dialog.YES.equalsIgnoreCase(btn.getItemId())) {
-                                for (User user : selectedUsers) {
-                                    userServiceAsync.remove(user, new DeleteUserAsyncCallback<Void>(grid));
-                                }
-                            }
-                        }
-                    });
+                    MessageBox.confirm("Delete?", "Are you sure?", makeConfirmDeleteListener());
                 }
             }
         });
+    }
+
+    private Listener<MessageBoxEvent> makeConfirmDeleteListener() {
+        return new Listener<MessageBoxEvent>() {
+            @Override
+            public void handleEvent(MessageBoxEvent be) {
+                Button btn = be.getButtonClicked();
+                if (Dialog.YES.equalsIgnoreCase(btn.getItemId())) {
+                    for (User user : (List<User>) selectionRowPlugin.getSelectedItems()) {
+                        userServiceAsync.remove(user, makeDeleteUserAsyncCallback());
+                    }
+                }
+            }
+        };
+    }
+
+    private AsyncCallback<Void> makeDeleteUserAsyncCallback() {
+        return new AsyncCallback<Void>() {
+            @Override
+            public void onFailure(Throwable throwable) {
+                Window.alert(throwable.getMessage());
+            }
+
+            @Override
+            public void onSuccess(Void aVoid) {
+                Info.display("Success", "Deleted");
+                grid.getStore().getLoader().load();
+            }
+        };
     }
 
     private void alignColumns(Style.HorizontalAlignment side) {
@@ -264,23 +272,4 @@ public class UserTable extends LayoutContainer {
         window.show();
     }
 
-}
-
-class DeleteUserAsyncCallback<Void> implements AsyncCallback<Void> {
-    private final Grid<User> grid;
-
-    public DeleteUserAsyncCallback(Grid<User> grid) {
-        this.grid = grid;
-    }
-
-    @Override
-    public void onFailure(Throwable throwable) {
-        Window.alert(throwable.getMessage());
-    }
-
-    @Override
-    public void onSuccess(Void aVoid) {
-        Info.display("Success", "Deleted");
-        grid.getStore().getLoader().load();
-    }
 }
