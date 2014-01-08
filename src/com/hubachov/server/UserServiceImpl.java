@@ -20,17 +20,32 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
     private RoleDAO roleDAO = new RoleDAOJDBC();
 
     @Override
-    public BasePagingLoadResult<User> getUsers(BasePagingLoadConfig config) throws Exception {
+    public BasePagingLoadResult<User> getUsers(FilterPagingLoadConfig config) throws Exception {
         List<User> roles = dao.findAll();
         if (config.getSortInfo().getSortField() != null) {
             final String sortField = config.getSortInfo().getSortField();
             Collections.sort(roles, new Comparator<User>() {
                 @Override
-                public int compare(User role1, User role2) {
+                public int compare(User first, User second) {
                     if (sortField.equals("login")) {
-                        return role1.getLogin().compareTo(role2.getLogin());
+                        return first.getLogin().compareTo(second.getLogin());
                     }
-                    return (int) (role1.getId() - role2.getId());
+                    if (sortField.equals("email")) {
+                        return first.getEmail().compareTo(second.getEmail());
+                    }
+                    if (sortField.equals("firstName")) {
+                        return first.getFirstName().compareTo(second.getFirstName());
+                    }
+                    if (sortField.equals("lastName")) {
+                        return first.getLastName().compareTo(second.getLastName());
+                    }
+                    if (sortField.equals("birthday")) {
+                        return first.getBirthday().compareTo(second.getBirthday());
+                    }
+                    if (sortField.equals("role")) {
+                        return first.getRole().getName().compareTo(second.getRole().getName());
+                    }
+                    return (int) (first.getId() - second.getId());
                 }
             });
         }

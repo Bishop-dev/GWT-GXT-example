@@ -35,7 +35,7 @@ public class UserTable extends LayoutContainer {
     private Grid<User> grid;
     private List<ColumnConfig> columns;
     private ListStore<User> store;
-    private BasePagingLoader<PagingLoadResult<User>> loader;
+    private PagingLoader<PagingLoadResult<User>> loader;
     private RpcProxy<BasePagingLoadResult<User>> proxy;
     private CheckBoxSelectionModel selectionRowPlugin = new CheckBoxSelectionModel<User>();
     private ContentPanel view = new ContentPanel();
@@ -60,7 +60,12 @@ public class UserTable extends LayoutContainer {
     }
 
     private void initLoader() {
-        loader = new BasePagingLoader<PagingLoadResult<User>>(proxy);
+        loader = new BasePagingLoader<PagingLoadResult<User>>(proxy) {
+            @Override
+            protected Object newLoadConfig() {
+                return new BaseFilterPagingLoadConfig();
+            }
+        };
         loader.setRemoteSort(true);
     }
 
@@ -92,7 +97,7 @@ public class UserTable extends LayoutContainer {
         proxy = new RpcProxy<BasePagingLoadResult<User>>() {
             @Override
             protected void load(Object config, AsyncCallback<BasePagingLoadResult<User>> callback) {
-                userServiceAsync.getUsers((BasePagingLoadConfig) config, callback);
+                userServiceAsync.getUsers((FilterPagingLoadConfig) config, callback);
             }
         };
     }
@@ -157,10 +162,11 @@ public class UserTable extends LayoutContainer {
     }
 
     private void addGridOnAttachListener() {
-        grid.addListener(Events.Attach, new Listener<GridEvent<User>>() {
+        grid.addListener(Events.Attach, new Listener<BaseEvent>() {
             @Override
-            public void handleEvent(GridEvent<User> baseEvent) {
-                Scheduler.get().scheduleDeferred(makeGridOnAttachScheduler());
+            public void handleEvent(BaseEvent baseEvent) {
+                // Scheduler.get().scheduleDeferred(makeGridOnAttachScheduler());
+                loader.load(0, USERS_ON_PAGE);
             }
         });
     }
@@ -171,7 +177,7 @@ public class UserTable extends LayoutContainer {
             public void execute() {
                 PagingLoadConfig config = new BasePagingLoadConfig();
                 config.setOffset(0);
-                config.setLimit(10);
+                config.setLimit(USERS_ON_PAGE);
                 Map<String, Object> state = grid.getState();
                 if (state.containsKey("offset")) {
                     int offset = (Integer) state.get("offset");
