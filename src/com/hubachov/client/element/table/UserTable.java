@@ -119,26 +119,20 @@ public class UserTable extends LayoutContainer {
         filters.addFilter(new StringFilter("firstName"));
         filters.addFilter(new StringFilter("lastName"));
         filters.addFilter(new DateFilter("birthday"));
-
-//        RpcProxy<BasePagingLoadResult<Role>> proxy = new RpcProxy<BasePagingLoadResult<Role>>() {
-//            @Override
-//            protected void load(Object loadConfig, AsyncCallback<BasePagingLoadResult<Role>> callback) {
-//                roleServiceAsync.getRoles((BasePagingLoadConfig) loadConfig, callback);
-//            }
-//        };
-//        BaseListLoader<ListLoadResult<ModelData>> loader = new BaseListLoader<ListLoadResult<ModelData>>(proxy);
-//        ListStore<Role> roleStore = new ListStore<Role>(loader);
-//        ListFilter roleFilter = new ListFilter("role", roleStore);
-//        loader.load();
-
         filters.addFilter(attachRoleFilter());
         return filters;
     }
 
     private ListFilter attachRoleFilter() {
-        ListStore<Role> roleStore = new ListStore<Role>();
-        roleStore.add(new Role("admin"));
-        roleStore.add(new Role("user"));
+        RpcProxy<BasePagingLoadResult<Role>> proxy = new RpcProxy<BasePagingLoadResult<Role>>() {
+            @Override
+            protected void load(Object loadConfig, AsyncCallback<BasePagingLoadResult<Role>> callback) {
+                roleServiceAsync.loadRoles((BaseListLoadConfig) loadConfig, callback);
+            }
+        };
+        BaseListLoader<ListLoadResult<ModelData>> loader = new BaseListLoader<ListLoadResult<ModelData>>(proxy);
+        ListStore<Role> roleStore = new ListStore<Role>(loader);
+        loader.load();
         ListFilter roleFilter = new ListFilter("role", roleStore);
         roleFilter.setDisplayProperty("name");
         return roleFilter;
