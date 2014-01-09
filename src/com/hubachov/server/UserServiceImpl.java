@@ -1,5 +1,6 @@
 package com.hubachov.server;
 
+import com.extjs.gxt.ui.client.Style;
 import com.extjs.gxt.ui.client.data.BasePagingLoadResult;
 import com.extjs.gxt.ui.client.data.FilterConfig;
 import com.extjs.gxt.ui.client.data.FilterPagingLoadConfig;
@@ -191,11 +192,17 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
     }
 
     private void sortUsers(FilterPagingLoadConfig config, List<User> users) {
+        final Style.SortDir direction = config.getSortDir();
         if (config.getSortInfo().getSortField() != null) {
             final String sortField = config.getSortInfo().getSortField();
             Collections.sort(users, new Comparator<User>() {
                 @Override
                 public int compare(User first, User second) {
+                    if (direction.equals(Style.SortDir.DESC)) {
+                        User tmp = first;
+                        first = second;
+                        second = tmp;
+                    }
                     if (sortField.equals("login")) {
                         return first.getLogin().compareTo(second.getLogin());
                     }
