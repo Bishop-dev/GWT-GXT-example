@@ -152,33 +152,9 @@ public class UserTable extends LayoutContainer {
         grid.addListener(Events.Attach, new Listener<BaseEvent>() {
             @Override
             public void handleEvent(BaseEvent baseEvent) {
-                //     Scheduler.get().scheduleDeferred(makeGridOnAttachScheduler());
                 loader.load(0, USERS_ON_PAGE);
             }
         });
-    }
-
-    private Scheduler.ScheduledCommand makeGridOnAttachScheduler() {
-        return new Scheduler.ScheduledCommand() {
-            @Override
-            public void execute() {
-                BaseFilterPagingLoadConfig config = new BaseFilterPagingLoadConfig();
-                config.setOffset(0);
-                config.setLimit(USERS_ON_PAGE);
-                Map<String, Object> state = grid.getState();
-                if (state.containsKey("offset")) {
-                    int offset = (Integer) state.get("offset");
-                    int limit = (Integer) state.get("limit");
-                    config.setLimit(limit);
-                    config.setOffset(offset);
-                }
-                if (state.containsKey("sortField")) {
-                    config.setSortField((String) state.get("sortField"));
-                    config.setSortDir(Style.SortDir.valueOf((String) state.get("sortDir")));
-                }
-                loader.load(config);
-            }
-        };
     }
 
     private Button makeNewEditUserBtn(String name, String id) {

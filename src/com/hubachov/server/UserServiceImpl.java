@@ -22,36 +22,35 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
     @Override
     public BasePagingLoadResult<User> getUsers(FilterPagingLoadConfig config) throws Exception {
         List<User> users = dao.findAll();
-        List<User> sorted = sortUsers(config, users);
-        List<User> filtered = filter(config, sorted);
-        List<User> reduced = reduce(config, filtered);
-        return new BasePagingLoadResult<User>(reduced, config.getOffset(), reduced.size());
+        int total = users.size();
+        sortUsers(config, users);
+        filter(config, users);
+        reduce(config, users);
+        return new BasePagingLoadResult<User>(users, config.getOffset(), total);
     }
 
-    private List<User> filter(FilterPagingLoadConfig config, List<User> sorted) {
+    private void filter(FilterPagingLoadConfig config, List<User> sorted) {
         List<FilterConfig> list = config.getFilterConfigs();
-        if (list == null || list.isEmpty()) {
-            return sorted;
+        if (list != null && !list.isEmpty()) {
+            for (FilterConfig filter : list) {
+                if (filter.getType().equals("numeric")) {
+                    sortByNumber(filter, sorted);
+                    continue;
+                }
+                if (filter.getType().equals("string")) {
+                    sortByString(filter, sorted);
+                    continue;
+                }
+                if (filter.getType().equals("date")) {
+                    sortByDate(filter, sorted);
+                    continue;
+                }
+                if (filter.getType().equals("list")) {
+                    sortByList(filter, sorted);
+                    continue;
+                }
+            }
         }
-        for (FilterConfig filter : list) {
-            if (filter.getType().equals("numeric")) {
-                sortByNumber(filter, sorted);
-                continue;
-            }
-            if (filter.getType().equals("string")) {
-                sortByString(filter, sorted);
-                continue;
-            }
-            if (filter.getType().equals("date")) {
-                sortByDate(filter, sorted);
-                continue;
-            }
-            if (filter.getType().equals("list")) {
-                sortByList(filter, sorted);
-                continue;
-            }
-        }
-        return sorted;
     }
 
     private void sortByList(FilterConfig filter, List<User> sorted) {
@@ -176,7 +175,8 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
             user.setRole(roleDAO.findByName(user.get("role").toString()));
             dao.create(user);
         } catch (Exception e) {
-
+            log.error("Can't create user#" + user.getLogin(), e);
+            throw e;
         }
     }
 
@@ -190,7 +190,7 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
         }
     }
 
-    private List<User> sortUsers(FilterPagingLoadConfig config, List<User> users) {
+    private void sortUsers(FilterPagingLoadConfig config, List<User> users) {
         if (config.getSortInfo().getSortField() != null) {
             final String sortField = config.getSortInfo().getSortField();
             Collections.sort(users, new Comparator<User>() {
@@ -218,10 +218,9 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
                 }
             });
         }
-        return users;
     }
 
-    private List<User> reduce(FilterPagingLoadConfig config, List<User> users) {
+    private void reduce(FilterPagingLoadConfig config, List<User> users) {
         int start = config.getOffset();
         int limit = users.size();
         if (config.getLimit() > 0) {
@@ -231,6 +230,7 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
         for (int i = start; i < limit; i++) {
             result.add(users.get(i));
         }
-        return result;
+        users.clear();
+        users.addAll(result);
     }
 }
