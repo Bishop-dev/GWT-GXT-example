@@ -6,10 +6,7 @@ import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
 import com.extjs.gxt.ui.client.widget.*;
 import com.extjs.gxt.ui.client.widget.button.Button;
-import com.extjs.gxt.ui.client.widget.grid.CheckBoxSelectionModel;
-import com.extjs.gxt.ui.client.widget.grid.ColumnConfig;
-import com.extjs.gxt.ui.client.widget.grid.ColumnModel;
-import com.extjs.gxt.ui.client.widget.grid.Grid;
+import com.extjs.gxt.ui.client.widget.grid.*;
 import com.extjs.gxt.ui.client.widget.grid.filters.*;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
 import com.extjs.gxt.ui.client.widget.toolbar.PagingToolBar;
@@ -24,10 +21,7 @@ import com.hubachov.client.model.User;
 import com.hubachov.client.service.RoleServiceAsync;
 import com.hubachov.client.service.UserServiceAsync;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class UserTable extends LayoutContainer {
     private final UserServiceAsync userServiceAsync;
@@ -119,7 +113,6 @@ public class UserTable extends LayoutContainer {
 
     private GridFilters attachFilters() {
         GridFilters filters = new GridFilters();
-        filters.setLocal(true);
         filters.addFilter(new NumericFilter("id"));
         filters.addFilter(new StringFilter("login"));
         filters.addFilter(new StringFilter("email"));
@@ -165,7 +158,7 @@ public class UserTable extends LayoutContainer {
         grid.addListener(Events.Attach, new Listener<BaseEvent>() {
             @Override
             public void handleEvent(BaseEvent baseEvent) {
-                // Scheduler.get().scheduleDeferred(makeGridOnAttachScheduler());
+                //     Scheduler.get().scheduleDeferred(makeGridOnAttachScheduler());
                 loader.load(0, USERS_ON_PAGE);
             }
         });
@@ -175,7 +168,7 @@ public class UserTable extends LayoutContainer {
         return new Scheduler.ScheduledCommand() {
             @Override
             public void execute() {
-                PagingLoadConfig config = new BasePagingLoadConfig();
+                BaseFilterPagingLoadConfig config = new BaseFilterPagingLoadConfig();
                 config.setOffset(0);
                 config.setLimit(USERS_ON_PAGE);
                 Map<String, Object> state = grid.getState();

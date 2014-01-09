@@ -1,30 +1,199 @@
 package com.hubachov.server;
 
-import com.extjs.gxt.ui.client.data.*;
+import com.extjs.gxt.ui.client.data.BasePagingLoadResult;
+import com.extjs.gxt.ui.client.data.FilterConfig;
+import com.extjs.gxt.ui.client.data.FilterPagingLoadConfig;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
-import com.hubachov.client.model.Role;
 import com.hubachov.client.model.User;
 import com.hubachov.client.service.UserService;
 import com.hubachov.dao.RoleDAO;
 import com.hubachov.dao.UserDAO;
 import com.hubachov.dao.impl.jdbc.RoleDAOJDBC;
 import com.hubachov.dao.impl.jdbc.UserDAOJDBC;
+import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class UserServiceImpl extends RemoteServiceServlet implements UserService {
+    private static final Logger log = Logger.getLogger(UserServiceImpl.class);
     private UserDAO dao = new UserDAOJDBC();
     private RoleDAO roleDAO = new RoleDAOJDBC();
 
     @Override
     public BasePagingLoadResult<User> getUsers(FilterPagingLoadConfig config) throws Exception {
-        List<User> roles = dao.findAll();
+        List<User> users = dao.findAll();
+        List<User> sorted = sortUsers(config, users);
+        List<User> filtered = filter(config, sorted);
+        List<User> reduced = reduce(config, filtered);
+        return new BasePagingLoadResult<User>(reduced, config.getOffset(), reduced.size());
+    }
+
+    private List<User> filter(FilterPagingLoadConfig config, List<User> sorted) {
+        List<FilterConfig> list = config.getFilterConfigs();
+        if (list == null || list.isEmpty()) {
+            return sorted;
+        }
+        for (FilterConfig filter : list) {
+            if (filter.getType().equals("numeric")) {
+                sortByNumber(filter, sorted);
+                continue;
+            }
+            if (filter.getType().equals("string")) {
+                sortByString(filter, sorted);
+                continue;
+            }
+            if (filter.getType().equals("date")) {
+                sortByDate(filter, sorted);
+                continue;
+            }
+            if (filter.getType().equals("list")) {
+                sortByList(filter, sorted);
+                continue;
+            }
+        }
+        return sorted;
+    }
+
+    private void sortByList(FilterConfig filter, List<User> sorted) {
+        String field = filter.getField();
+        List<String> restrictions = ((ArrayList<String>) filter.getValue());
+        Iterator<User> iterator = sorted.iterator();
+        while (iterator.hasNext()) {
+            User user = iterator.next();
+            String userValue = user.get(field);
+            boolean coincidence = false;
+            for (String restriction : restrictions) {
+                if (restriction.equals(userValue)) {
+                    coincidence = true;
+                    break;
+                }
+            }
+            if (!coincidence) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private void sortByDate(FilterConfig filter, List<User> sorted) {
+        String field = filter.getField();
+        Date value = (Date) filter.getValue();
+        String comparison = filter.getComparison();
+        Iterator<User> iterator = sorted.iterator();
+        while (iterator.hasNext()) {
+            User user = iterator.next();
+            Calendar date = Calendar.getInstance();
+            Calendar point = Calendar.getInstance();
+            point.setTime(value);
+            date.setTime((Date) user.get(field));
+            if (comparison.equals("on")) {
+                if (point.get(Calendar.YEAR) == date.get(Calendar.YEAR)) {
+                    if (point.get(Calendar.DAY_OF_YEAR) != date.get(Calendar.DAY_OF_YEAR)) {
+                        iterator.remove();
+                    }
+                } else if (point.get(Calendar.YEAR) != date.get(Calendar.YEAR)) {
+                    iterator.remove();
+                }
+                continue;
+            }
+            if (comparison.equals("before")) {
+                if (point.get(Calendar.YEAR) < date.get(Calendar.YEAR)) {
+                    iterator.remove();
+                } else if (point.get(Calendar.YEAR) == date.get(Calendar.YEAR)) {
+                    if (point.get(Calendar.DAY_OF_YEAR) <= date.get(Calendar.DAY_OF_YEAR)) {
+                        iterator.remove();
+                    }
+                }
+                continue;
+            }
+            if (comparison.equals("after")) {
+                if (point.get(Calendar.YEAR) > date.get(Calendar.YEAR)) {
+                    iterator.remove();
+                } else if (point.get(Calendar.DAY_OF_YEAR) >= date.get(Calendar.DAY_OF_YEAR)) {
+                    iterator.remove();
+                }
+            }
+        }
+    }
+
+    private void sortByString(FilterConfig filter, List<User> sorted) {
+        String field = filter.getField();
+        String pattern = (String) filter.getValue();
+        Iterator<User> iterator = sorted.iterator();
+        while (iterator.hasNext()) {
+            User user = iterator.next();
+            if (!((String) user.get(field)).contains(pattern)) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private void sortByNumber(FilterConfig filter, List<User> sorted) {
+        String field = filter.getField();
+        String comparison = filter.getComparison();
+        long value = Math.round((double) filter.getValue());
+        Iterator<User> iterator = sorted.iterator();
+        while (iterator.hasNext()) {
+            User user = iterator.next();
+            if (comparison.equals("lt") && (Long) user.get(field) > value) {
+                iterator.remove();
+                continue;
+            }
+            if (comparison.equals("gt") && (Long) user.get(field) < value) {
+                iterator.remove();
+                continue;
+            }
+            if (comparison.equals("eq") && (Long) user.get(field) != value) {
+                iterator.remove();
+                continue;
+            }
+        }
+    }
+
+    @Override
+    public void update(User user) throws Exception {
+        try {
+            user.setRole(roleDAO.findByName(user.get("role").toString()));
+            dao.update(user);
+        } catch (Exception e) {
+            log.error("Can't update user#" + user.getId(), e);
+            throw e;
+        }
+    }
+
+    @Override
+    public void remove(User user) throws Exception {
+        try {
+            dao.remove(user);
+        } catch (Exception e) {
+            log.error("Can't remove user#" + user.getId(), e);
+            throw e;
+        }
+    }
+
+    @Override
+    public void create(User user) throws Exception {
+        try {
+            user.setRole(roleDAO.findByName(user.get("role").toString()));
+            dao.create(user);
+        } catch (Exception e) {
+
+        }
+    }
+
+    @Override
+    public boolean checkLogin(String login) throws Exception {
+        try {
+            return dao.findByLogin(login) == null;
+        } catch (Exception e) {
+            log.error("Can't check login " + login, e);
+            throw e;
+        }
+    }
+
+    private List<User> sortUsers(FilterPagingLoadConfig config, List<User> users) {
         if (config.getSortInfo().getSortField() != null) {
             final String sortField = config.getSortInfo().getSortField();
-            Collections.sort(roles, new Comparator<User>() {
+            Collections.sort(users, new Comparator<User>() {
                 @Override
                 public int compare(User first, User second) {
                     if (sortField.equals("login")) {
@@ -49,54 +218,19 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
                 }
             });
         }
+        return users;
+    }
+
+    private List<User> reduce(FilterPagingLoadConfig config, List<User> users) {
         int start = config.getOffset();
-        int limit = roles.size();
+        int limit = users.size();
         if (config.getLimit() > 0) {
             limit = Math.min(start + config.getLimit(), limit);
         }
         List<User> result = new ArrayList<User>();
         for (int i = start; i < limit; i++) {
-            result.add(roles.get(i));
+            result.add(users.get(i));
         }
-        return new BasePagingLoadResult<User>(result, start, roles.size());
-    }
-
-    @Override
-    public void update(User user) throws Exception {
-        try {
-            user.setRole(roleDAO.findByName(user.get("role").toString()));
-            dao.update(user);
-        } catch (Exception e) {
-            throw e;
-        }
-    }
-
-    @Override
-    public void remove(User user) throws Exception {
-        try {
-            dao.remove(user);
-        } catch (Exception e) {
-
-        }
-    }
-
-    @Override
-    public void create(User user) throws Exception {
-        try {
-            user.setRole(roleDAO.findByName(user.get("role").toString()));
-            dao.create(user);
-        } catch (Exception e) {
-
-        }
-    }
-
-    @Override
-    public boolean checkLogin(String login) throws Exception {
-        try {
-            return dao.findByLogin(login) == null;
-        } catch (Exception e) {
-
-        }
-        return false;
+        return result;
     }
 }
