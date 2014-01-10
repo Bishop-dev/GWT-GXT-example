@@ -15,6 +15,7 @@ import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.hubachov.client.TaskEntryPoint;
 import com.hubachov.client.model.Role;
 import com.hubachov.client.model.User;
 import com.hubachov.client.service.RoleServiceAsync;
@@ -37,14 +38,9 @@ public class UserForm extends LayoutContainer {
             "][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0" +
             "-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5" +
             "a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])";
-    private UserServiceAsync userServiceAsync;
-    private RoleServiceAsync roleServiceAsync;
     private com.extjs.gxt.ui.client.widget.Window window;
 
-    public UserForm(Grid<User> grid, User user, UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync,
-                    com.extjs.gxt.ui.client.widget.Window window, ContentPanel view) {
-        this.userServiceAsync = userServiceAsync;
-        this.roleServiceAsync = roleServiceAsync;
+    public UserForm(Grid<User> grid, User user, com.extjs.gxt.ui.client.widget.Window window, ContentPanel view) {
         this.user = user;
         this.grid = grid;
         this.window = window;
@@ -179,7 +175,7 @@ public class UserForm extends LayoutContainer {
         RpcProxy<BasePagingLoadResult<Role>> proxy = new RpcProxy<BasePagingLoadResult<Role>>() {
             @Override
             protected void load(Object loadConfig, AsyncCallback<BasePagingLoadResult<Role>> callback) {
-                roleServiceAsync.getRoles((BasePagingLoadConfig) loadConfig, callback);
+                TaskEntryPoint.roleService.getRoles((BasePagingLoadConfig) loadConfig, callback);
             }
         };
         BaseListLoader<ListLoadResult<ModelData>> loader = new BaseListLoader<ListLoadResult<ModelData>>(proxy);
@@ -223,7 +219,7 @@ public class UserForm extends LayoutContainer {
             @Override
             public void componentSelected(ButtonEvent ce) {
                 if (user != null) {
-                    userServiceAsync.update(constructUser(), new AsyncCallback<Void>() {
+                    TaskEntryPoint.userService.update(constructUser(), new AsyncCallback<Void>() {
                         @Override
                         public void onFailure(Throwable throwable) {
                             Window.alert(throwable.getMessage());
@@ -236,7 +232,7 @@ public class UserForm extends LayoutContainer {
                         }
                     });
                 } else {
-                    userServiceAsync.create(constructUser(), new AsyncCallback<Void>() {
+                    TaskEntryPoint.userService.create(constructUser(), new AsyncCallback<Void>() {
                         @Override
                         public void onFailure(Throwable throwable) {
                             Window.alert(throwable.getMessage());

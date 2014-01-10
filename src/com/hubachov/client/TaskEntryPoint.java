@@ -11,8 +11,8 @@ import com.hubachov.client.service.UserService;
 import com.hubachov.client.service.UserServiceAsync;
 
 public class TaskEntryPoint implements EntryPoint {
-    private UserServiceAsync userService = (UserServiceAsync) GWT.create(UserService.class);
-    private RoleServiceAsync roleService = (RoleServiceAsync) GWT.create(RoleService.class);
+    public static UserServiceAsync userService = (UserServiceAsync) GWT.create(UserService.class);
+    public static RoleServiceAsync roleService = (RoleServiceAsync) GWT.create(RoleService.class);
 
     @Override
     public void onModuleLoad() {
@@ -20,6 +20,6 @@ public class TaskEntryPoint implements EntryPoint {
         userServiceDefTarget.setServiceEntryPoint(GWT.getModuleBaseURL() + "UserService");
         ServiceDefTarget roleServiceDefTarget = (ServiceDefTarget) roleService;
         roleServiceDefTarget.setServiceEntryPoint(GWT.getModuleBaseURL() + "RoleService");
-        RootPanel.get("content").add(new MainPage(userService, roleService));
+        RootPanel.get("content").add(new MainPage());
     }
 }

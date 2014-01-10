@@ -1,5 +1,6 @@
 package com.hubachov.client.service;
 
+import com.extjs.gxt.ui.client.data.BaseListLoadConfig;
 import com.extjs.gxt.ui.client.data.BasePagingLoadConfig;
 import com.extjs.gxt.ui.client.data.BasePagingLoadResult;
 import com.extjs.gxt.ui.client.data.FilterPagingLoadConfig;
@@ -19,4 +20,5 @@ public interface UserService extends RemoteService {
 
     public boolean checkLogin(String login) throws Exception;
 
+    public BasePagingLoadResult<User> loadUsers(BaseListLoadConfig loadConfig) throws Exception;
 }

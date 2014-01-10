@@ -5,7 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -20,6 +22,8 @@ public class RoleDAOJDBC implements RoleDAO {
     private static final String SQL__UPDATE_ROLE = "UPDATE Role SET role_name=? WHERE role_id=?;";
     private static final String SQL__REMOVE_ROLE = "DELETE FROM Role WHERE role_id=?;";
     private static final String SQL__FIND_BY_NAME = "SELECT * FROM Role WHERE role_name=?;";
+    private static final String SQL__GAIN_STATISTIC = "SELECT Role.role_id, Role.role_name, COUNT(*) FROM Role " +
+            "INNER JOIN User ON Role.role_id=User.role_id GROUP BY Role.role_name;";
 
     @Override
     public List<Role> findAll() throws Exception {
@@ -114,6 +118,29 @@ public class RoleDAOJDBC implements RoleDAO {
         }
         log.warn("Role with name \"" + name + "\" doesn't exist");
         return null;
+    }
+
+    @Override
+    public List<Role> getStatistic() throws Exception {
+        List<Role> result = new ArrayList<Role>();
+        Connection connection = DBUtil.getInstance().getConnection();
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.prepareStatement(SQL__GAIN_STATISTIC);
+            resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                Role role = extractRole(resultSet);
+                role.set("number", resultSet.getInt("COUNT(*)"));
+                result.add(role);
+            }
+        } catch (Exception e) {
+            log.error("Can't calculate statistic", e);
+            throw e;
+        } finally {
+            DBUtil.closeAll(resultSet, statement, connection);
+        }
+        return result;
     }
 
     private synchronized Role extractRole(ResultSet resultSet)

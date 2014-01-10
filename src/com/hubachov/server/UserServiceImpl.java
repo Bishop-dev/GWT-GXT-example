@@ -1,6 +1,7 @@
 package com.hubachov.server;
 
 import com.extjs.gxt.ui.client.Style;
+import com.extjs.gxt.ui.client.data.BaseListLoadConfig;
 import com.extjs.gxt.ui.client.data.BasePagingLoadResult;
 import com.extjs.gxt.ui.client.data.FilterConfig;
 import com.extjs.gxt.ui.client.data.FilterPagingLoadConfig;
@@ -189,6 +190,11 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
             log.error("Can't check login " + login, e);
             throw e;
         }
+    }
+
+    @Override
+    public BasePagingLoadResult<User> loadUsers(BaseListLoadConfig loadConfig) throws Exception {
+        return new BasePagingLoadResult<User>(dao.findAll());
     }
 
     private void sortUsers(FilterPagingLoadConfig config, List<User> users) {

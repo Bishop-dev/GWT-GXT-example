@@ -17,8 +17,8 @@ import com.extjs.gxt.ui.client.widget.toolbar.ToolBar;
 import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.hubachov.client.TaskEntryPoint;
 import com.hubachov.client.model.Role;
-import com.hubachov.client.service.RoleServiceAsync;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,17 +26,12 @@ import java.util.Map;
 
 public class RoleTable extends LayoutContainer {
     private static final int ROLES_ON_PAGE = 10;
-    private RoleServiceAsync roleServiceAsync;
     private RpcProxy<BasePagingLoadResult<Role>> proxy;
     private PagingLoader<PagingLoadResult<Role>> loader;
     private List<ColumnConfig> columnConfigList;
     private Grid<Role> grid;
     private ListStore<Role> store;
     private ContentPanel view = new ContentPanel();
-
-    public RoleTable(RoleServiceAsync roleServiceAsync) {
-        this.roleServiceAsync = roleServiceAsync;
-    }
 
     @Override
     public void onRender(Element parent, int index) {
@@ -77,7 +72,7 @@ public class RoleTable extends LayoutContainer {
                 }
                 //to prevent excess service calling
                 if (!roles.isEmpty()) {
-                    roleServiceAsync.update(roles, getUpdateAsyncCallback());
+                    TaskEntryPoint.roleService.update(roles, getUpdateAsyncCallback());
                 }
             }
         });
@@ -110,7 +105,7 @@ public class RoleTable extends LayoutContainer {
         proxy = new RpcProxy<BasePagingLoadResult<Role>>() {
             @Override
             protected void load(Object config, AsyncCallback<BasePagingLoadResult<Role>> callback) {
-                roleServiceAsync.getRoles((BasePagingLoadConfig) config, callback);
+                TaskEntryPoint.roleService.getRoles((BasePagingLoadConfig) config, callback);
             }
         };
     }

@@ -1,5 +1,6 @@
 package com.hubachov.client.service;
 
+import com.extjs.gxt.ui.client.data.BaseListLoadConfig;
 import com.extjs.gxt.ui.client.data.BasePagingLoadConfig;
 import com.extjs.gxt.ui.client.data.BasePagingLoadResult;
 import com.extjs.gxt.ui.client.data.FilterPagingLoadConfig;
@@ -16,4 +17,6 @@ public interface UserServiceAsync {
     public void create(User user, AsyncCallback<Void> async);
 
     public void checkLogin(String login, AsyncCallback<Boolean> async);
+
+    public void loadUsers(BaseListLoadConfig loadConfig, AsyncCallback<BasePagingLoadResult<User>> callback);
 }

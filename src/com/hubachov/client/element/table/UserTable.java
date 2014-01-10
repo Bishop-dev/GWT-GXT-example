@@ -14,17 +14,14 @@ import com.extjs.gxt.ui.client.widget.toolbar.ToolBar;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.hubachov.client.TaskEntryPoint;
 import com.hubachov.client.element.form.UserForm;
 import com.hubachov.client.model.Role;
 import com.hubachov.client.model.User;
-import com.hubachov.client.service.RoleServiceAsync;
-import com.hubachov.client.service.UserServiceAsync;
 
 import java.util.*;
 
 public class UserTable extends LayoutContainer {
-    private final UserServiceAsync userServiceAsync;
-    private final RoleServiceAsync roleServiceAsync;
     private Grid<User> grid;
     private List<ColumnConfig> columns;
     private ListStore<User> store;
@@ -33,11 +30,6 @@ public class UserTable extends LayoutContainer {
     private CheckBoxSelectionModel selectionRowPlugin = new CheckBoxSelectionModel<User>();
     private ContentPanel view = new ContentPanel();
     private static final int USERS_ON_PAGE = 10;
-
-    public UserTable(UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
-        this.userServiceAsync = userServiceAsync;
-        this.roleServiceAsync = roleServiceAsync;
-    }
 
     @Override
     protected void onRender(Element parent, int index) {
@@ -90,7 +82,7 @@ public class UserTable extends LayoutContainer {
         proxy = new RpcProxy<BasePagingLoadResult<User>>() {
             @Override
             protected void load(Object config, AsyncCallback<BasePagingLoadResult<User>> callback) {
-                userServiceAsync.getUsers((FilterPagingLoadConfig) config, callback);
+                TaskEntryPoint.userService.getUsers((FilterPagingLoadConfig) config, callback);
             }
         };
     }
@@ -126,7 +118,7 @@ public class UserTable extends LayoutContainer {
         RpcProxy<BasePagingLoadResult<Role>> proxy = new RpcProxy<BasePagingLoadResult<Role>>() {
             @Override
             protected void load(Object loadConfig, AsyncCallback<BasePagingLoadResult<Role>> callback) {
-                roleServiceAsync.loadRoles((BaseListLoadConfig) loadConfig, callback);
+                TaskEntryPoint.roleService.loadRoles((BaseListLoadConfig) loadConfig, callback);
             }
         };
         BaseListLoader<ListLoadResult<ModelData>> loader = new BaseListLoader<ListLoadResult<ModelData>>(proxy);
@@ -201,7 +193,7 @@ public class UserTable extends LayoutContainer {
                 Button btn = be.getButtonClicked();
                 if (Dialog.YES.equalsIgnoreCase(btn.getItemId())) {
                     for (User user : (List<User>) selectionRowPlugin.getSelectedItems()) {
-                        userServiceAsync.remove(user, makeDeleteUserAsyncCallback());
+                        TaskEntryPoint.userService.remove(user, makeDeleteUserAsyncCallback());
                     }
                 }
             }
@@ -235,7 +227,7 @@ public class UserTable extends LayoutContainer {
         com.extjs.gxt.ui.client.widget.Window window =
                 new com.extjs.gxt.ui.client.widget.Window();
         window.setClosable(false);
-        window.add(new UserForm(grid, user, userServiceAsync, roleServiceAsync, window, view));
+        window.add(new UserForm(grid, user, window, view));
         window.setWidth(350);
         window.show();
     }

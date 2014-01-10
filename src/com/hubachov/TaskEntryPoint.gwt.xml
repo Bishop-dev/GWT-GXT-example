@@ -7,6 +7,8 @@
 
     <inherits name="com.extjs.gxt.ui.GXT"/>
 
+    <inherits name="com.extjs.gxt.charts.Chart"/>
+
     <servlet path="/roleService" class="com.hubachov.server.RoleServiceImpl"/>
 
     <servlet path="/userService" class="com.hubachov.server.UserServiceImpl"/>

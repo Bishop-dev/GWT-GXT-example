@@ -7,6 +7,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.hubachov.client.model.Role;
 
 import java.util.List;
+import java.util.Map;
 
 public interface RoleServiceAsync {
     public void getRoles(BasePagingLoadConfig config, AsyncCallback<BasePagingLoadResult<Role>> async);
@@ -14,4 +15,6 @@ public interface RoleServiceAsync {
     public void update(List<Role> roles, AsyncCallback<Void> asyncCallback);
 
     public void loadRoles(BaseListLoadConfig loadConfig, AsyncCallback<BasePagingLoadResult<Role>> callback);
+
+    public void loadRoleStatistic(BaseListLoadConfig loadConfig, AsyncCallback<BasePagingLoadResult<Role>> callback);
 }

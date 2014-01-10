@@ -8,6 +8,7 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 import com.hubachov.client.model.Role;
 
 import java.util.List;
+import java.util.Map;
 
 @RemoteServiceRelativePath(value = "RoleService")
 public interface RoleService extends RemoteService {
@@ -16,4 +17,6 @@ public interface RoleService extends RemoteService {
     public void update(List<Role> role) throws Exception;
 
     public BasePagingLoadResult<Role> loadRoles(BaseListLoadConfig loadConfig) throws Exception;
+
+    public BasePagingLoadResult<Role> loadRoleStatistic(BaseListLoadConfig loadConfig) throws Exception;
 }

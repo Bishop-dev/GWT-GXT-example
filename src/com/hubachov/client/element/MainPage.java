@@ -10,19 +10,12 @@ import com.extjs.gxt.ui.client.widget.button.Button;
 import com.extjs.gxt.ui.client.widget.layout.BorderLayout;
 import com.extjs.gxt.ui.client.widget.layout.BorderLayoutData;
 import com.google.gwt.user.client.Element;
+import com.hubachov.client.element.chart.UserByRolesChart;
 import com.hubachov.client.element.table.RoleTable;
 import com.hubachov.client.element.table.UserTable;
-import com.hubachov.client.service.RoleServiceAsync;
-import com.hubachov.client.service.UserServiceAsync;
 
 public class MainPage extends LayoutContainer {
-    private UserServiceAsync userServiceAsync;
-    private RoleServiceAsync roleServiceAsync;
-
-    public MainPage(UserServiceAsync userServiceAsync, RoleServiceAsync roleServiceAsync) {
-        this.userServiceAsync = userServiceAsync;
-        this.roleServiceAsync = roleServiceAsync;
-    }
+    private ContentPanel center;
 
     @Override
     protected void onRender(Element target, int index) {
@@ -31,7 +24,7 @@ public class MainPage extends LayoutContainer {
         setLayout(layout);
         setStyleAttribute("padding", "10px");
         ContentPanel west = new ContentPanel();
-        final ContentPanel center = new ContentPanel();
+        center = new ContentPanel();
         center.setHeading("Content");
         center.setScrollMode(Style.Scroll.AUTOX);
         BorderLayoutData westData = new BorderLayoutData(Style.LayoutRegion.WEST, 150);
@@ -41,27 +34,44 @@ public class MainPage extends LayoutContainer {
         BorderLayoutData centerData = new BorderLayoutData(Style.LayoutRegion.CENTER);
         centerData.setMargins(new Margins(0));
 
-        Button users = new Button("Users", new SelectionListener<ButtonEvent>() {
+        west.add(makeUsersButton());
+        west.add(makeRolesButton());
+        west.add(makeChartsButton());
+
+        add(west, westData);
+        add(center, centerData);
+    }
+
+    private Button makeUsersButton(){
+       return new Button("Users", new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
                 center.removeAll();
-                center.add(new UserTable(userServiceAsync, roleServiceAsync));
+                center.add(new UserTable());
                 center.layout(true);
             }
         });
+    }
 
-        Button roles = new Button("Roles", new SelectionListener<ButtonEvent>() {
+    private Button makeRolesButton() {
+        return new Button("Roles", new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent buttonEvent) {
                 center.removeAll();
-                center.add(new RoleTable(roleServiceAsync));
+                center.add(new RoleTable());
                 center.layout(true);
             }
         });
+    }
 
-        west.add(users);
-        west.add(roles);
-        add(west, westData);
-        add(center, centerData);
+    private Button makeChartsButton() {
+        return new Button("Charts", new SelectionListener<ButtonEvent>() {
+            @Override
+            public void componentSelected(ButtonEvent ce) {
+                center.removeAll();
+                center.add(new UserByRolesChart());
+                center.layout(true);
+            }
+        });
     }
 }

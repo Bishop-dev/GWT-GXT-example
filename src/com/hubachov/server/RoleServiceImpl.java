@@ -9,10 +9,7 @@ import com.hubachov.client.service.RoleService;
 import com.hubachov.dao.RoleDAO;
 import com.hubachov.dao.impl.jdbc.RoleDAOJDBC;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class RoleServiceImpl extends RemoteServiceServlet implements RoleService {
     private RoleDAO dao = new RoleDAOJDBC();
@@ -54,5 +51,10 @@ public class RoleServiceImpl extends RemoteServiceServlet implements RoleService
     @Override
     public BasePagingLoadResult<Role> loadRoles(BaseListLoadConfig loadConfig) throws Exception {
         return new BasePagingLoadResult<Role>(dao.findAll());
+    }
+
+    @Override
+    public BasePagingLoadResult<Role> loadRoleStatistic(BaseListLoadConfig loadConfig) throws Exception {
+        return new BasePagingLoadResult<Role>(dao.getStatistic());
     }
 }
