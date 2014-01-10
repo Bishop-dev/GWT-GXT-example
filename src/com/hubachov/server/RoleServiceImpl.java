@@ -42,10 +42,13 @@ public class RoleServiceImpl extends RemoteServiceServlet implements RoleService
     }
 
     @Override
-    public void update(List<Role> roles) throws Exception {
-        for (Role role : roles) {
-            dao.update(role);
-        }
+    public void update(Role role) throws Exception {
+        dao.update(role);
+    }
+
+    @Override
+    public void create(Role role) throws Exception {
+        dao.create(role);
     }
 
     @Override
@@ -56,5 +59,10 @@ public class RoleServiceImpl extends RemoteServiceServlet implements RoleService
     @Override
     public BasePagingLoadResult<Role> loadRoleStatistic(BaseListLoadConfig loadConfig) throws Exception {
         return new BasePagingLoadResult<Role>(dao.getStatistic());
+    }
+
+    @Override
+    public void remove(Role role) throws Exception {
+        dao.remove(role);
     }
 }

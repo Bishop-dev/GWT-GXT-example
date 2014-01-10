@@ -5,9 +5,7 @@ import com.extjs.gxt.ui.client.data.*;
 import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
 import com.extjs.gxt.ui.client.store.Record;
-import com.extjs.gxt.ui.client.widget.ContentPanel;
-import com.extjs.gxt.ui.client.widget.Info;
-import com.extjs.gxt.ui.client.widget.LayoutContainer;
+import com.extjs.gxt.ui.client.widget.*;
 import com.extjs.gxt.ui.client.widget.button.Button;
 import com.extjs.gxt.ui.client.widget.form.TextField;
 import com.extjs.gxt.ui.client.widget.grid.*;
@@ -28,9 +26,11 @@ public class RoleTable extends LayoutContainer {
     private static final int ROLES_ON_PAGE = 10;
     private RpcProxy<BasePagingLoadResult<Role>> proxy;
     private PagingLoader<PagingLoadResult<Role>> loader;
-    private List<ColumnConfig> columnConfigList;
+    private List<ColumnConfig> columns;
     private Grid<Role> grid;
     private ListStore<Role> store;
+    private final RowEditor<Role> rowEditor = new RowEditor<Role>();
+    private CheckBoxSelectionModel selectionRowPlugin = new CheckBoxSelectionModel<Role>();
     private ContentPanel view = new ContentPanel();
 
     @Override
@@ -40,7 +40,7 @@ public class RoleTable extends LayoutContainer {
         initLoader();
         attachToolbar();
         configureColumns();
-        grid = new EditorGrid<Role>(store, new ColumnModel(columnConfigList));
+        grid = new EditorGrid<Role>(store, new ColumnModel(columns));
         addOnAttachGridListener();
         styleGrid();
         styleView();
@@ -59,20 +59,36 @@ public class RoleTable extends LayoutContainer {
         return button;
     }
 
+    private Button makeNewBtn() {
+        Button button = new Button("Add");
+        addSaveNewRoleListener(button);
+        return button;
+    }
+
+    private Button makeDeleteBtn() {
+        Button button = new Button("Delete");
+        addDeleteRoleListener(button);
+        return button;
+    }
+
     private void addSaveRoleListener(Button button) {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
-                List<Role> roles = new ArrayList<Role>();
+                boolean reload = false;
                 for (Record record : store.getModifiedRecords()) {
                     Role role = (Role) record.getModel();
                     String newName = role.get("name");
                     role.setName(newName);
-                    roles.add(role);
+                    if (role.getId() == 0) {
+                        TaskEntryPoint.roleService.create(role, getUpdateAsyncCallback());
+                        reload = true;
+                    } else {
+                        TaskEntryPoint.roleService.update(role, getUpdateAsyncCallback());
+                    }
                 }
-                //to prevent excess service calling
-                if (!roles.isEmpty()) {
-                    TaskEntryPoint.roleService.update(roles, getUpdateAsyncCallback());
+                if (reload) {
+                    loader.load();
                 }
             }
         });
@@ -85,6 +101,59 @@ public class RoleTable extends LayoutContainer {
                 store.rejectChanges();
             }
         });
+    }
+
+    private void addSaveNewRoleListener(Button button) {
+        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
+            @Override
+            public void componentSelected(ButtonEvent ce) {
+                Role role = new Role(0L, "");
+                rowEditor.stopEditing(false);
+                store.insert(role, store.getCount());
+                rowEditor.startEditing(store.indexOf(role), true);
+            }
+        });
+    }
+
+    private void addDeleteRoleListener(Button button) {
+        button.addSelectionListener(new SelectionListener<ButtonEvent>() {
+            @Override
+            public void componentSelected(ButtonEvent ce) {
+                final List<Role> selectedRoles = selectionRowPlugin.getSelectedItems();
+                if (!selectedRoles.isEmpty()) {
+                    MessageBox.confirm("Delete", "Are you sure?", makeConfirmDeleteListener());
+                }
+            }
+        });
+    }
+
+    private Listener<MessageBoxEvent> makeConfirmDeleteListener() {
+        return new Listener<MessageBoxEvent>() {
+            @Override
+            public void handleEvent(MessageBoxEvent be) {
+                Button btn = be.getButtonClicked();
+                if (Dialog.YES.equalsIgnoreCase(btn.getItemId())) {
+                    for (Role role : (List<Role>) selectionRowPlugin.getSelectedItems()) {
+                        TaskEntryPoint.roleService.remove(role, makeDeleteRoleAsyncCallback());
+                    }
+                }
+            }
+        };
+    }
+
+    private AsyncCallback<Void> makeDeleteRoleAsyncCallback() {
+        return new AsyncCallback<Void>() {
+            @Override
+            public void onFailure(Throwable throwable) {
+                com.google.gwt.user.client.Window.alert(throwable.getMessage());
+            }
+
+            @Override
+            public void onSuccess(Void aVoid) {
+                Info.display("Success", "Deleted");
+                loader.load();
+            }
+        };
     }
 
     private AsyncCallback<Void> getUpdateAsyncCallback() {
@@ -118,13 +187,14 @@ public class RoleTable extends LayoutContainer {
     }
 
     private void configureColumns() {
-        columnConfigList = new ArrayList<ColumnConfig>();
-        columnConfigList.add(new ColumnConfig("id", "Id", 30));
+        columns = new ArrayList<ColumnConfig>();
+        columns.add(selectionRowPlugin.getColumn());
+        columns.add(new ColumnConfig("id", "Id", 30));
         ColumnConfig nameColumnConfig = new ColumnConfig("name", "Name", 100);
         TextField<String> field = new TextField<String>();
         field.setAllowBlank(false);
         nameColumnConfig.setEditor(new CellEditor(field));
-        columnConfigList.add(nameColumnConfig);
+        columns.add(nameColumnConfig);
     }
 
     private void styleGrid() {
@@ -132,6 +202,9 @@ public class RoleTable extends LayoutContainer {
         grid.setStateful(true);
         grid.setLoadMask(true);
         grid.setBorders(true);
+        grid.addPlugin(rowEditor);
+        grid.addPlugin(selectionRowPlugin);
+        grid.setSelectionModel(selectionRowPlugin);
         grid.setSize(600, 350);
         grid.getAriaSupport().setLabelledBy(view.getId());
     }
@@ -176,6 +249,8 @@ public class RoleTable extends LayoutContainer {
         ToolBar toolBar = new ToolBar();
         toolBar.add(makeSaveBtn());
         toolBar.add(makeResetBtn());
+        toolBar.add(makeNewBtn());
+        toolBar.add(makeDeleteBtn());
         view.setHeading("Editable Role Grid");
         view.setFrame(true);
         view.setSize(800, 350);

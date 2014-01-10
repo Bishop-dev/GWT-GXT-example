@@ -14,9 +14,13 @@ import java.util.Map;
 public interface RoleService extends RemoteService {
     public BasePagingLoadResult<Role> getRoles(BasePagingLoadConfig config) throws Exception;
 
-    public void update(List<Role> role) throws Exception;
+    public void update(Role role) throws Exception;
+
+    public void create(Role role) throws Exception;
 
     public BasePagingLoadResult<Role> loadRoles(BaseListLoadConfig loadConfig) throws Exception;
 
     public BasePagingLoadResult<Role> loadRoleStatistic(BaseListLoadConfig loadConfig) throws Exception;
+
+    public void remove(Role role) throws Exception;
 }

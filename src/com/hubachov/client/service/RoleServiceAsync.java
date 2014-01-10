@@ -12,9 +12,13 @@ import java.util.Map;
 public interface RoleServiceAsync {
     public void getRoles(BasePagingLoadConfig config, AsyncCallback<BasePagingLoadResult<Role>> async);
 
-    public void update(List<Role> roles, AsyncCallback<Void> asyncCallback);
+    public void update(Role role, AsyncCallback<Void> asyncCallback);
 
     public void loadRoles(BaseListLoadConfig loadConfig, AsyncCallback<BasePagingLoadResult<Role>> callback);
 
     public void loadRoleStatistic(BaseListLoadConfig loadConfig, AsyncCallback<BasePagingLoadResult<Role>> callback);
+
+    public void create(Role role, AsyncCallback<Void> async);
+
+    public void remove(Role role, AsyncCallback<Void> asyncCallback);
 }

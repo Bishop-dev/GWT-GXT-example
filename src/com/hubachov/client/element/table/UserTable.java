@@ -210,7 +210,7 @@ public class UserTable extends LayoutContainer {
             @Override
             public void onSuccess(Void aVoid) {
                 Info.display("Success", "Deleted");
-                grid.getStore().getLoader().load();
+                loader.load();
             }
         };
     }

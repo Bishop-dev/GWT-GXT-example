@@ -56,6 +56,7 @@ public class UserByRolesChart extends LayoutContainer {
         pie.setColours("#ff0000", "#00aa00", "#0000ff", "#ff9900", "#ff00ff");
     }
 
+    // use sql to calculate statistic
     private void attachData(PieChart pie) {
         RpcProxy<BasePagingLoadResult<Role>> proxy = new RpcProxy<BasePagingLoadResult<Role>>() {
             @Override
@@ -71,6 +72,7 @@ public class UserByRolesChart extends LayoutContainer {
         loader.load();
     }
 
+    // overrides a source code
     private void attachOverriddenVariant(PieChart pie) {
         RpcProxy<BasePagingLoadResult<User>> proxy = new RpcProxy<BasePagingLoadResult<User>>() {
             @Override

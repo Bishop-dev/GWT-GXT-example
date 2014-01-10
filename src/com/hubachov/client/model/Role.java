@@ -61,7 +61,8 @@ public class Role extends BaseModel implements Serializable {
             return false;
         }
         Role other = (Role) obj;
-        return this.id == other.getId() && this.name.equals(other.getName());
+        return this.id == other.getId() && this.name.equals(other.getName()) &&
+                this.get("name").equals(other.get("name"));
     }
 
     @Override
