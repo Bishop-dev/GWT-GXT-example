@@ -65,4 +65,5 @@ public class RoleServiceImpl extends RemoteServiceServlet implements RoleService
     public void remove(Role role) throws Exception {
         dao.remove(role);
     }
+
 }

@@ -18,10 +18,8 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.hubachov.client.TaskEntryPoint;
 import com.hubachov.client.model.Role;
 import com.hubachov.client.model.User;
-import com.hubachov.client.service.RoleServiceAsync;
-import com.hubachov.client.service.UserServiceAsync;
 
-import java.util.*;
+import java.util.Date;
 
 public class UserForm extends LayoutContainer {
     private User user;

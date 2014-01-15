@@ -24,6 +24,7 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
     @Override
     public BasePagingLoadResult<User> getUsers(FilterPagingLoadConfig config) throws Exception {
         List<User> users = dao.findAll();
+        enrich(users);
         int total = users.size();
         sortUsers(config, users);
         filter(config, users);
@@ -31,31 +32,37 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
         return new BasePagingLoadResult<User>(users, config.getOffset(), total);
     }
 
+    private void enrich(List<User> users) throws Exception {
+        for (User user : users) {
+            roleDAO.enrichUser(user);
+        }
+    }
+
     private void filter(FilterPagingLoadConfig config, List<User> sorted) {
         List<FilterConfig> list = config.getFilterConfigs();
         if (list != null && !list.isEmpty()) {
             for (FilterConfig filter : list) {
                 if (filter.getType().equals("numeric")) {
-                    sortByNumber(filter, sorted);
+                    filterByNumber(filter, sorted);
                     continue;
                 }
                 if (filter.getType().equals("string")) {
-                    sortByString(filter, sorted);
+                    filterByString(filter, sorted);
                     continue;
                 }
                 if (filter.getType().equals("date")) {
-                    sortByDate(filter, sorted);
+                    filterByDate(filter, sorted);
                     continue;
                 }
                 if (filter.getType().equals("list")) {
-                    sortByList(filter, sorted);
+                    filterByList(filter, sorted);
                     continue;
                 }
             }
         }
     }
 
-    private void sortByList(FilterConfig filter, List<User> sorted) {
+    private void filterByList(FilterConfig filter, List<User> sorted) {
         String field = filter.getField();
         List<String> restrictions = ((ArrayList<String>) filter.getValue());
         Iterator<User> iterator = sorted.iterator();
@@ -75,7 +82,7 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
         }
     }
 
-    private void sortByDate(FilterConfig filter, List<User> sorted) {
+    private void filterByDate(FilterConfig filter, List<User> sorted) {
         String field = filter.getField();
         Date value = (Date) filter.getValue();
         String comparison = filter.getComparison();
@@ -116,7 +123,7 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
         }
     }
 
-    private void sortByString(FilterConfig filter, List<User> sorted) {
+    private void filterByString(FilterConfig filter, List<User> sorted) {
         String field = filter.getField();
         String pattern = (String) filter.getValue();
         Iterator<User> iterator = sorted.iterator();
@@ -128,7 +135,7 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
         }
     }
 
-    private void sortByNumber(FilterConfig filter, List<User> sorted) {
+    private void filterByNumber(FilterConfig filter, List<User> sorted) {
         String field = filter.getField();
         String comparison = filter.getComparison();
         long value = Math.round((double) filter.getValue());

@@ -1,29 +1,28 @@
 package com.hubachov.dao.impl.jdbc;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
+import com.hubachov.client.model.Role;
+import com.hubachov.client.model.User;
 import com.hubachov.dao.RoleDAO;
 import com.hubachov.dbmanager.DBUtil;
-import com.hubachov.client.model.Role;
+import org.apache.log4j.Logger;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class RoleDAOJDBC implements RoleDAO {
     private static Logger log = Logger.getLogger(RoleDAOJDBC.class);
     private static final String SQL__GET_ALL = "SELECT * FROM ROLE";
-    private static final String SQL__CREATE_ROLE = "INSERT INTO Role (role_name) VALUES(?);";
-    private static final String SQL__UPDATE_ROLE = "UPDATE Role SET role_name=? WHERE role_id=?;";
-    private static final String SQL__REMOVE_ROLE = "DELETE FROM Role WHERE role_id=?;";
-    private static final String SQL__FIND_BY_NAME = "SELECT * FROM Role WHERE role_name=?;";
-    private static final String SQL__GAIN_STATISTIC = "SELECT Role.role_id, Role.role_name, COUNT(*) FROM Role " +
-            "INNER JOIN User ON Role.role_id=User.role_id GROUP BY Role.role_name;";
+    private static final String SQL__CREATE_ROLE = "INSERT INTO Role (role_name) VALUES(?)";
+    private static final String SQL__UPDATE_ROLE = "UPDATE Role SET role_name=? WHERE role_id=?";
+    private static final String SQL__REMOVE_ROLE = "DELETE FROM Role WHERE role_id=?";
+    private static final String SQL__FIND_BY_NAME = "SELECT * FROM Role WHERE role_name=?";
+    private static final String SQL__GAIN_STATISTIC = "SELECT ROLE.ROLE_NAME, COUNT(*) " +
+            "FROM ROLE INNER JOIN USER_ROLE ON ROLE.ROLE_ID=USER_ROLE.ROLE_ID GROUP BY ROLE.ROLE_NAME";
+    private static final String CALLABLE_GAIN_STATISTIC = "call statistic()";
+    private static final String CALLABLE__ENRICH_USER = "call enrichuser(?)";
 
     @Override
     public List<Role> findAll() throws Exception {
@@ -39,7 +38,7 @@ public class RoleDAOJDBC implements RoleDAO {
             log.error("Can't get roles", e);
             throw e;
         } finally {
-            DBUtil.closeAll(set, preparedStatement, connection);
+            DBUtil.closeAll(set, null, preparedStatement, connection);
         }
         return result;
     }
@@ -63,7 +62,7 @@ public class RoleDAOJDBC implements RoleDAO {
         } catch (SQLException e) {
             log.error("Can't save role: " + role.toString(), e);
         } finally {
-            DBUtil.closeAll(resultSet, statement, connection);
+            DBUtil.closeAll(resultSet, null, statement, connection);
         }
     }
 
@@ -79,7 +78,7 @@ public class RoleDAOJDBC implements RoleDAO {
         } catch (SQLException e) {
             log.error("Can't update role#" + role.getId(), e);
         } finally {
-            DBUtil.closeAll(null, statement, connection);
+            DBUtil.closeAll(null, null, statement, connection);
         }
     }
 
@@ -95,7 +94,7 @@ public class RoleDAOJDBC implements RoleDAO {
             log.error("Can't remove role#" + role.getId()
                     + ". Most likely User table has reference to this role.", e);
         } finally {
-            DBUtil.closeAll(null, statement, connection);
+            DBUtil.closeAll(null, null, statement, connection);
         }
     }
 
@@ -114,7 +113,7 @@ public class RoleDAOJDBC implements RoleDAO {
         } catch (SQLException e) {
             log.error("Can't find role with name \"" + name + "\"", e);
         } finally {
-            DBUtil.closeAll(resultSet, statement, connection);
+            DBUtil.closeAll(resultSet, null, statement, connection);
         }
         log.warn("Role with name \"" + name + "\" doesn't exist");
         return null;
@@ -122,6 +121,51 @@ public class RoleDAOJDBC implements RoleDAO {
 
     @Override
     public List<Role> getStatistic() throws Exception {
+        Connection connection = DBUtil.getInstance().getConnection();
+        CallableStatement callableStatement = connection.prepareCall(CALLABLE_GAIN_STATISTIC);
+        List<Role> result = new ArrayList<Role>();
+        ResultSet resultSet = null;
+        try {
+            callableStatement.execute();
+            resultSet = callableStatement.getResultSet();
+            while (resultSet.next()) {
+                Role role = new Role();
+                role.setName(resultSet.getString(1));
+                role.set("number", resultSet.getInt(2));
+                result.add(role);
+            }
+        } catch (Exception e) {
+            log.error("Can't get roles", e);
+            throw e;
+        } finally {
+            DBUtil.closeAll(resultSet, callableStatement, null, connection);
+        }
+        return result;
+    }
+
+    @Override
+    public void enrichUser(User user) throws Exception {
+        Set<Role> roles = new HashSet<Role>();
+        Connection connection = DBUtil.getInstance().getConnection();
+        ResultSet resultSet = null;
+        CallableStatement statement = connection.prepareCall(CALLABLE__ENRICH_USER);
+        statement.setLong(1, user.getId());
+        try {
+            statement.execute();
+            resultSet = statement.getResultSet();
+            while (resultSet.next()) {
+                roles.add(extractRole(resultSet));
+            }
+            user.setRoles(roles);
+        } catch (Exception e) {
+            log.error("Can't enrich user#" + user.getId(), e);
+            throw e;
+        } finally {
+            DBUtil.closeAll(resultSet, statement, null, connection);
+        }
+    }
+
+    private List<Role> gainStatisticFromPreparedStatement() throws Exception {
         List<Role> result = new ArrayList<Role>();
         Connection connection = DBUtil.getInstance().getConnection();
         PreparedStatement statement = null;
@@ -130,15 +174,16 @@ public class RoleDAOJDBC implements RoleDAO {
             statement = connection.prepareStatement(SQL__GAIN_STATISTIC);
             resultSet = statement.executeQuery();
             while (resultSet.next()) {
-                Role role = extractRole(resultSet);
-                role.set("number", resultSet.getInt("COUNT(*)"));
+                Role role = new Role();
+                role.setName(resultSet.getString(1));
+                role.set("number", resultSet.getInt(2));
                 result.add(role);
             }
         } catch (Exception e) {
             log.error("Can't calculate statistic", e);
             throw e;
         } finally {
-            DBUtil.closeAll(resultSet, statement, connection);
+            DBUtil.closeAll(resultSet, null, statement, connection);
         }
         return result;
     }

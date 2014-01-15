@@ -1,6 +1,7 @@
 package com.hubachov.dao;
 
 import com.hubachov.client.model.Role;
+import com.hubachov.client.model.User;
 
 import java.io.Serializable;
 import java.util.List;
@@ -19,4 +20,6 @@ public interface RoleDAO extends Serializable {
     public Role findByName(String name) throws Exception;
 
     public List<Role> getStatistic() throws Exception;
+
+    public void enrichUser(User user) throws Exception;
 }

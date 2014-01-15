@@ -28,8 +28,7 @@ public class UserByRolesChart extends LayoutContainer {
         cp.setFrame(true);
         cp.setSize(550, 400);
         cp.setLayout(new FitLayout());
-        String url = "gxt/chart/open-flash-chart.swf";
-        Chart chart = new Chart(url);
+        Chart chart = new Chart("gxt/chart/open-flash-chart.swf");
         chart.setBorders(true);
         chart.setChartModel(getPieChart());
         cp.add(chart);

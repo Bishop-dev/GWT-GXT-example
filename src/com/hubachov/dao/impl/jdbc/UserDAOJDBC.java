@@ -17,13 +17,13 @@ import com.hubachov.client.model.User;
 public class UserDAOJDBC implements UserDAO {
     private static Logger log = Logger.getLogger(UserDAOJDBC.class);
     private static final String SQL__CREATE_USER = "INSERT INTO User (role_id, user_login, user_password, user_email, " +
-            "user_firstName, user_lastName, user_birthday) values(?,?,?,?,?,?,?);";
-    private static final String SQL__SELECT_ALL = "SELECT * FROM User INNER JOIN Role ON User.role_id=Role.role_id;";
-    private static final String SQL__FIND_BY_LOGIN = "SELECT * FROM User INNER JOIN ROLE ON User.role_id=Role.role_id AND User.user_login=?;";
-    private static final String SQL__FIND_BY_EMAIL = "SELECT * FROM User INNER JOIN ROLE ON User.role_id=Role.role_id AND User.user_email=?;";
-    private static final String SQL__REMOVE_USER = "DELETE FROM User WHERE user_id=?;";
+            "user_firstName, user_lastName, user_birthday) values(?,?,?,?,?,?,?)";
+    private static final String SQL__SELECT_ALL = "SELECT * FROM User";
+    private static final String SQL__FIND_BY_LOGIN = "SELECT * FROM User INNER JOIN ROLE ON User.role_id=Role.role_id AND User.user_login=?";
+    private static final String SQL__FIND_BY_EMAIL = "SELECT * FROM User INNER JOIN ROLE ON User.role_id=Role.role_id AND User.user_email=?";
+    private static final String SQL__REMOVE_USER = "DELETE FROM User WHERE user_id=?";
     private static final String SQL__UPDATE_USER = "UPDATE User SET role_id=?, user_password=?, user_email=?, " +
-            "user_firstName=?, user_lastName=?, user_birthday=? WHERE user_id=?;";
+            "user_firstName=?, user_lastName=?, user_birthday=? WHERE user_id=?";
 
     @Override
     public synchronized void create(User user) throws SQLException {
@@ -52,7 +52,7 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Can't save user: " + user.toString(), e);
             throw e;
         } finally {
-            DBUtil.closeAll(resultSet, statement, connection);
+            DBUtil.closeAll(resultSet, null, statement, connection);
         }
     }
 
@@ -74,7 +74,7 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Can't update user#" + user.getId(), e);
             throw e;
         } finally {
-            DBUtil.closeAll(null, statement, connection);
+            DBUtil.closeAll(null, null, statement, connection);
         }
     }
 
@@ -90,7 +90,7 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Can't remove user#" + user.getId(), e);
             throw e;
         } finally {
-            DBUtil.closeAll(null, statement, connection);
+            DBUtil.closeAll(null, null, statement, connection);
         }
     }
 
@@ -110,7 +110,7 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Error in findAll()", e);
             throw e;
         } finally {
-            DBUtil.closeAll(resultSet, statement, connection);
+            DBUtil.closeAll(resultSet, null, statement, connection);
         }
         if (list.isEmpty()) {
             log.trace("There is no users");
@@ -134,7 +134,7 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Can't find user with login \"" + login + "\"", e);
             throw e;
         } finally {
-            DBUtil.closeAll(resultSet, statement, connection);
+            DBUtil.closeAll(resultSet, null, statement, connection);
         }
         log.trace("User \"" + login + "\" doesn't exist");
         return null;
@@ -156,7 +156,7 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Can't find user with email \"" + email + "\"", e);
             throw e;
         } finally {
-            DBUtil.closeAll(resultSet, statement, connection);
+            DBUtil.closeAll(resultSet, null, statement, connection);
         }
         log.trace("User with email \"" + email + "\" doesn't exist");
         return null;
@@ -166,10 +166,10 @@ public class UserDAOJDBC implements UserDAO {
         User user = new User();
         try {
             user.setId(result.getLong("user_id"));
-            Role role = new Role();
-            role.setId(result.getLong("role_id"));
-            role.setName(result.getString("role_name"));
-            user.setRole(role);
+//            Role role = new Role();
+//            role.setId(result.getLong("role_id"));
+//            role.setName(result.getString("role_name"));
+//            user.setRole(role);
             user.setLogin(result.getString("user_login"));
             user.setPassword(result.getString("user_password"));
             user.setEmail(result.getString("user_email"));

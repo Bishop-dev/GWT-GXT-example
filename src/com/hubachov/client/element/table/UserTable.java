@@ -74,7 +74,7 @@ public class UserTable extends LayoutContainer {
         columns.add(new ColumnConfig("firstName", "First Name", 100));
         columns.add(new ColumnConfig("lastName", "Last Name", 100));
         columns.add(new ColumnConfig("birthday", "Birthday", 100));
-        columns.add(new ColumnConfig("role", "Role", 120));
+        columns.add(new ColumnConfig("roles", "Roles", 120));
         alignColumns(Style.HorizontalAlignment.LEFT);
     }
 

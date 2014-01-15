@@ -4,6 +4,8 @@ import com.extjs.gxt.ui.client.data.BaseModel;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 public class User extends BaseModel implements Serializable {
     static final long serialVersionUID = 7816369586829971697L;
@@ -15,6 +17,7 @@ public class User extends BaseModel implements Serializable {
     private String lastName;
     private Date birthday;
     private Role role;
+    private Set<Role> roles;
 
     public User() {
 
@@ -104,22 +107,34 @@ public class User extends BaseModel implements Serializable {
         set("role", role.getName());
     }
 
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    private String getRolesAsString() {
+        StringBuffer buffer = new StringBuffer();
+        for (Role role : roles) {
+            buffer.append(role.getName());
+            buffer.append(" ");
+        }
+        return buffer.toString().trim();
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+        set("roles", getRolesAsString());
+    }
+
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result
-                + ((birthday == null) ? 0 : birthday.hashCode());
-        result = prime * result + ((email == null) ? 0 : email.hashCode());
-        result = prime * result
-                + ((firstName == null) ? 0 : firstName.hashCode());
-        result = prime * result + (int) (id ^ (id >>> 32));
-        result = prime * result
-                + ((lastName == null) ? 0 : lastName.hashCode());
-        result = prime * result + ((login == null) ? 0 : login.hashCode());
-        result = prime * result
-                + ((password == null) ? 0 : password.hashCode());
-        result = (int) (prime * result + role.getId());
+        int result = (int) (id ^ (id >>> 32));
+        result = 31 * result + (login != null ? login.hashCode() : 0);
+        result = 31 * result + (password != null ? password.hashCode() : 0);
+        result = 31 * result + (email != null ? email.hashCode() : 0);
+        result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
+        result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
+        result = 31 * result + (birthday != null ? birthday.hashCode() : 0);
+        result = 31 * result + (role != null ? role.hashCode() : 0);
         return result;
     }
 
@@ -140,7 +155,7 @@ public class User extends BaseModel implements Serializable {
         return "User [id=" + id + ", login=" + login + ", password=" + password
                 + ", email=" + email + ", firstName=" + firstName
                 + ", lastName=" + lastName + ", birthday=" + birthday
-                + ", role=" + role + "]";
+                + "]";
     }
 
 }
