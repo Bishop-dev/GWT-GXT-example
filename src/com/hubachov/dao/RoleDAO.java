@@ -25,4 +25,6 @@ public interface RoleDAO extends Serializable {
     public void enrichUser(User user) throws Exception;
 
     public void saveUserRoles(User user) throws Exception;
+
+    public void resetRoles(User user) throws Exception;
 }

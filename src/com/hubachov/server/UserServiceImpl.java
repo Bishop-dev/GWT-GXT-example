@@ -160,7 +160,7 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
     @Override
     public void update(User user) throws Exception {
         try {
-            user.setRole(roleDAO.findByName(user.get("role").toString()));
+            roleDAO.resetRoles(user);
             dao.update(user);
         } catch (Exception e) {
             log.error("Can't update user#" + user.getId(), e);

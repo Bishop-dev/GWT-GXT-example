@@ -2,8 +2,7 @@ package com.hubachov.client.element.form;
 
 import com.extjs.gxt.ui.client.Style;
 import com.extjs.gxt.ui.client.data.*;
-import com.extjs.gxt.ui.client.event.ButtonEvent;
-import com.extjs.gxt.ui.client.event.SelectionListener;
+import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.store.ListStore;
 import com.extjs.gxt.ui.client.widget.CheckBoxListView;
 import com.extjs.gxt.ui.client.widget.ContentPanel;
@@ -92,8 +91,6 @@ public class UserForm extends LayoutContainer {
         if (user != null) {
             login.setValue(user.getLogin());
             login.setEnabled(false);
-        } else {
-
         }
         form.add(login);
     }
@@ -175,6 +172,13 @@ public class UserForm extends LayoutContainer {
     }
 
     private void attachRolesField() {
+        roleList = new CheckBoxListView<Role>();
+        roleList.setStore(makeStore());
+        roleList.setDisplayProperty("name");
+        form.add(createRolePanel());
+    }
+
+    private ListStore<Role> makeStore() {
         RpcProxy<BaseListLoadResult<Role>> proxy = new RpcProxy<BaseListLoadResult<Role>>() {
             @Override
             protected void load(Object loadConfig, AsyncCallback<BaseListLoadResult<Role>> callback) {
@@ -184,6 +188,22 @@ public class UserForm extends LayoutContainer {
         BaseListLoader<ListLoadResult<Role>> loader = new BaseListLoader<ListLoadResult<Role>>(proxy);
         ListStore<Role> roleStore = new ListStore<Role>(loader);
         loader.load();
+        addLoaderListener(loader);
+        return roleStore;
+    }
+
+    private void addLoaderListener(BaseListLoader<ListLoadResult<Role>> loader) {
+        loader.addLoadListener(new LoadListener() {
+            @Override
+            public void loaderLoad(LoadEvent le) {
+                for (Role role : user.getRoles()) {
+                    roleList.setChecked(role, true);
+                }
+            }
+        });
+    }
+
+    private ContentPanel createRolePanel() {
         ContentPanel panel = new ContentPanel();
         panel.setCollapsible(true);
         panel.setAnimCollapse(false);
@@ -192,11 +212,8 @@ public class UserForm extends LayoutContainer {
         panel.setWidth(300);
         panel.setAutoHeight(true);
         panel.setBodyBorder(false);
-        roleList = new CheckBoxListView<Role>();
-        roleList.setStore(roleStore);
-        roleList.setDisplayProperty("name");
         panel.add(roleList);
-        form.add(panel);
+        return panel;
     }
 
     private void attachButtons() {
@@ -224,35 +241,32 @@ public class UserForm extends LayoutContainer {
         submitBtn.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
+                if (roleList.getChecked().isEmpty()) {
+                    Window.alert("Choose at least one role");
+                    return;
+                }
                 if (user != null) {
-                    TaskEntryPoint.userService.update(constructUser(), new AsyncCallback<Void>() {
-                        @Override
-                        public void onFailure(Throwable throwable) {
-                            Window.alert(throwable.getMessage());
-                        }
-
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            Info.display("Success", "Updated");
-                            removeForm();
-                        }
-                    });
+                    TaskEntryPoint.userService.update(constructUser(), getAsyncCallbackCreateEdit());
                 } else {
-                    TaskEntryPoint.userService.create(constructUser(), new AsyncCallback<Void>() {
-                        @Override
-                        public void onFailure(Throwable throwable) {
-                            Window.alert(throwable.getMessage());
-                        }
-
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            Info.display("Success", "Added");
-                            removeForm();
-                        }
-                    });
+                    TaskEntryPoint.userService.create(constructUser(), getAsyncCallbackCreateEdit());
                 }
             }
         });
+    }
+
+    private AsyncCallback<Void> getAsyncCallbackCreateEdit() {
+        return new AsyncCallback<Void>() {
+            @Override
+            public void onFailure(Throwable throwable) {
+                Window.alert(throwable.getMessage());
+            }
+
+            @Override
+            public void onSuccess(Void aVoid) {
+                Info.display("Success", "Added");
+                removeForm();
+            }
+        };
     }
 
     private User constructUser() {

@@ -15,7 +15,7 @@ public class UserDAOJDBC implements UserDAO {
     private static final String SQL__REMOVE_USER = "DELETE FROM User WHERE user_id=?";
     private static final String SQL__FIND_BY_LOGIN = "SELECT * FROM User INNER JOIN ROLE ON User.role_id=Role.role_id AND User.user_login=?";
     private static final String SQL__FIND_BY_EMAIL = "SELECT * FROM User INNER JOIN ROLE ON User.role_id=Role.role_id AND User.user_email=?";
-    private static final String SQL__UPDATE_USER = "UPDATE User SET role_id=?, user_password=?, user_email=?, " +
+    private static final String SQL__UPDATE_USER = "UPDATE User SET user_password=?, user_email=?, " +
             "user_firstName=?, user_lastName=?, user_birthday=? WHERE user_id=?";
     private static final String CALLABLE__CREATE_USER = "call createUser(?,?,?,?,?,?,?)";
 
@@ -48,13 +48,12 @@ public class UserDAOJDBC implements UserDAO {
         PreparedStatement statement = null;
         try {
             statement = connection.prepareStatement(SQL__UPDATE_USER);
-            statement.setLong(1, user.getRole().getId());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-            statement.setString(4, user.getFirstName());
-            statement.setString(5, user.getLastName());
-            statement.setDate(6, new java.sql.Date(user.getBirthday().getTime()));
-            statement.setLong(7, user.getId());
+            statement.setString(1, user.getPassword());
+            statement.setString(2, user.getEmail());
+            statement.setString(3, user.getFirstName());
+            statement.setString(4, user.getLastName());
+            statement.setDate(5, new java.sql.Date(user.getBirthday().getTime()));
+            statement.setLong(6, user.getId());
             statement.executeUpdate();
         } catch (SQLException e) {
             log.error("Can't update user#" + user.getId(), e);

@@ -24,6 +24,7 @@ public class RoleDAOJDBC implements RoleDAO {
     private static final String CALLABLE_GAIN_STATISTIC = "call statistic()";
     private static final String CALLABLE__ENRICH_USER = "call enrichuser(?)";
     private static final String CALLABLE__SAVE_USER_ROLE = "call saveUserRoles(?,?)";
+    private static final String SQL__REMOVE_USER_ROLES = "DELETE FROM user_role ur WHERE ur.user_id=?";
 
     @Override
     public List<Role> findAll() throws Exception {
@@ -169,6 +170,10 @@ public class RoleDAOJDBC implements RoleDAO {
     @Override
     public void saveUserRoles(User user) throws Exception {
         Connection connection = DBUtil.getInstance().getConnection();
+        saveUserRoles(user, connection);
+    }
+
+    private void saveUserRoles(User user, Connection connection) throws Exception {
         CallableStatement statement = connection.prepareCall(CALLABLE__SAVE_USER_ROLE);
         try {
             for (Role role : user.getRoles()) {
@@ -187,6 +192,26 @@ public class RoleDAOJDBC implements RoleDAO {
             throw e;
         } finally {
             DBUtil.closeAll(null, statement, null, connection);
+        }
+    }
+
+    @Override
+    public void resetRoles(User user) throws Exception {
+        Connection connection = DBUtil.getInstance().getConnection();
+        removeUserRoles(user, connection);
+        saveUserRoles(user, connection);
+    }
+
+    private void removeUserRoles(User user, Connection connection) throws Exception {
+        PreparedStatement statement = null;
+        statement = connection.prepareStatement(SQL__REMOVE_USER_ROLES);
+        statement.setLong(1, user.getId());
+        try {
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            log.error("Can't remove roles of user#" + user.getId(), e);
+        } finally {
+            DBUtil.closeAll(null, null, statement, null);
         }
     }
 

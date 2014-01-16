@@ -165,6 +165,11 @@ public class UserTable extends LayoutContainer {
         button.addSelectionListener(new SelectionListener<ButtonEvent>() {
             @Override
             public void componentSelected(ButtonEvent ce) {
+
+
+
+
+
                 if (button.getId().equals("edit-btn")) {
                     showUserFormWindow(grid.getSelectionModel().getSelectedItem());
                 } else {
