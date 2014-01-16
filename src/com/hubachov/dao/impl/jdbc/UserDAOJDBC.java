@@ -1,22 +1,20 @@
 package com.hubachov.dao.impl.jdbc;
 
+import com.hubachov.client.model.User;
+import com.hubachov.dao.UserDAO;
+import com.hubachov.dbmanager.DBUtil;
+import org.apache.log4j.Logger;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.hubachov.client.model.Role;
-import org.apache.log4j.Logger;
-
-import com.hubachov.dao.UserDAO;
-import com.hubachov.dbmanager.DBUtil;
-import com.hubachov.client.model.User;
-
 public class UserDAOJDBC implements UserDAO {
     private static Logger log = Logger.getLogger(UserDAOJDBC.class);
     private static final String SQL__SELECT_ALL = "SELECT * FROM User";
+    private static final String SQL__REMOVE_USER = "DELETE FROM User WHERE user_id=?";
     private static final String SQL__FIND_BY_LOGIN = "SELECT * FROM User INNER JOIN ROLE ON User.role_id=Role.role_id AND User.user_login=?";
     private static final String SQL__FIND_BY_EMAIL = "SELECT * FROM User INNER JOIN ROLE ON User.role_id=Role.role_id AND User.user_email=?";
-    private static final String SQL__REMOVE_USER = "DELETE FROM User WHERE user_id=?";
     private static final String SQL__UPDATE_USER = "UPDATE User SET role_id=?, user_password=?, user_email=?, " +
             "user_firstName=?, user_lastName=?, user_birthday=? WHERE user_id=?";
     private static final String CALLABLE__CREATE_USER = "call createUser(?,?,?,?,?,?,?)";

@@ -37,8 +37,8 @@ create table user_role(
 user_role_id integer not null unique,
 user_id integer not null,
 role_id integer not null,
-foreign key (user_id) references user(user_id),
-foreign key (role_id) references role(role_id),
+foreign key (user_id) references user(user_id) on delete cascade,
+foreign key (role_id) references role(role_id) on delete cascade,
 primary key(user_role_id)
 )
 
@@ -98,3 +98,10 @@ create procedure createUser(in u_login varchar(50),in u_password varchar(50),in 
 language sql
 select user_id into id from final table(insert into user (user_id, user_login,user_password,user_email,user_firstname,user_lastname,user_birthday) values
 (next value for user_identity, u_login, u_password, u_email,u_firstname,u_lastname,u_birthday))
+
+alter table user_role drop column user_id
+
+alter table user_role add column user_id integer
+
+ALTER TABLE user_role ADD CONSTRAINT user_id FOREIGN KEY(user_id) REFERENCES user(user_id) ON DELETE CASCADE
+
