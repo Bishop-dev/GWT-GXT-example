@@ -89,3 +89,12 @@ declare c1 cursor with return for
 select r.role_id, r.role_name from role r inner join user_role ur on r.role_id=ur.role_id and ur.user_id=u_id;
 open c1;
 end
+
+create procedure saveUserRoles(in u_id integer, in r_id integer)
+language sql
+insert into user_role(user_role_id, user_id,role_id)values(next value for user_role_identity, u_id, r_id)
+
+create procedure createUser(in u_login varchar(50),in u_password varchar(50),in u_email varchar(50),in u_firstname varchar(50),in u_lastname varchar(50),in u_birthday date,out id integer)
+language sql
+select user_id into id from final table(insert into user (user_id, user_login,user_password,user_email,user_firstname,user_lastname,user_birthday) values
+(next value for user_identity, u_login, u_password, u_email,u_firstname,u_lastname,u_birthday))

@@ -1,6 +1,7 @@
 package com.hubachov.server;
 
 import com.extjs.gxt.ui.client.data.BaseListLoadConfig;
+import com.extjs.gxt.ui.client.data.BaseListLoadResult;
 import com.extjs.gxt.ui.client.data.BasePagingLoadConfig;
 import com.extjs.gxt.ui.client.data.BasePagingLoadResult;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
@@ -64,6 +65,11 @@ public class RoleServiceImpl extends RemoteServiceServlet implements RoleService
     @Override
     public void remove(Role role) throws Exception {
         dao.remove(role);
+    }
+
+    @Override
+    public BaseListLoadResult<Role> getRoles(BaseListLoadConfig loadConfig) throws Exception {
+        return new BaseListLoadResult<Role>(dao.findAll());
     }
 
 }

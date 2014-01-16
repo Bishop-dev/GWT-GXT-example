@@ -5,6 +5,7 @@ import com.extjs.gxt.ui.client.data.*;
 import com.extjs.gxt.ui.client.event.ButtonEvent;
 import com.extjs.gxt.ui.client.event.SelectionListener;
 import com.extjs.gxt.ui.client.store.ListStore;
+import com.extjs.gxt.ui.client.widget.CheckBoxListView;
 import com.extjs.gxt.ui.client.widget.ContentPanel;
 import com.extjs.gxt.ui.client.widget.Info;
 import com.extjs.gxt.ui.client.widget.LayoutContainer;
@@ -20,12 +21,15 @@ import com.hubachov.client.model.Role;
 import com.hubachov.client.model.User;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 public class UserForm extends LayoutContainer {
     private User user;
     private FormPanel form;
     private final Grid<User> grid;
     private final ContentPanel view;
+    private CheckBoxListView<Role> roleList;
     private static final String DATE_FORMAT = "MM/dd/y";
     private static final String REGEX_EMAIL = "(?:[a-z0-9!#$%&'*+/=?^_`{|" +
             "}~-]+(?:\\.[a-z0-9!#$%&'*" +
@@ -68,6 +72,7 @@ public class UserForm extends LayoutContainer {
         form.setHeading(user == null ? "Adding User" : "Editing User");
         form.setFrame(true);
         form.setWidth(350);
+        form.setHeight(600);
     }
 
     private void attachIdField() {
@@ -170,25 +175,28 @@ public class UserForm extends LayoutContainer {
     }
 
     private void attachRolesField() {
-        RpcProxy<BasePagingLoadResult<Role>> proxy = new RpcProxy<BasePagingLoadResult<Role>>() {
+        RpcProxy<BaseListLoadResult<Role>> proxy = new RpcProxy<BaseListLoadResult<Role>>() {
             @Override
-            protected void load(Object loadConfig, AsyncCallback<BasePagingLoadResult<Role>> callback) {
-                TaskEntryPoint.roleService.getRoles((BasePagingLoadConfig) loadConfig, callback);
+            protected void load(Object loadConfig, AsyncCallback<BaseListLoadResult<Role>> callback) {
+                TaskEntryPoint.roleService.getRoles((BaseListLoadConfig) loadConfig, callback);
             }
         };
-        BaseListLoader<ListLoadResult<ModelData>> loader = new BaseListLoader<ListLoadResult<ModelData>>(proxy);
+        BaseListLoader<ListLoadResult<Role>> loader = new BaseListLoader<ListLoadResult<Role>>(proxy);
         ListStore<Role> roleStore = new ListStore<Role>(loader);
-        ComboBox<Role> combo = new ComboBox<Role>();
-        combo.setFieldLabel("Role");
-        combo.setDisplayField("name");
-        combo.setName("role");
-        combo.setAllowBlank(false);
-        if (user != null) {
-            combo.setValue(user.getRole());
-        }
-        combo.setTriggerAction(ComboBox.TriggerAction.ALL);
-        combo.setStore(roleStore);
-        form.add(combo);
+        loader.load();
+        ContentPanel panel = new ContentPanel();
+        panel.setCollapsible(true);
+        panel.setAnimCollapse(false);
+        panel.setFrame(true);
+        panel.setHeading("Roles");
+        panel.setWidth(300);
+        panel.setAutoHeight(true);
+        panel.setBodyBorder(false);
+        roleList = new CheckBoxListView<Role>();
+        roleList.setStore(roleStore);
+        roleList.setDisplayProperty("name");
+        panel.add(roleList);
+        form.add(panel);
     }
 
     private void attachButtons() {
@@ -249,6 +257,8 @@ public class UserForm extends LayoutContainer {
 
     private User constructUser() {
         User user = new User();
+        Set<Role> roles = new HashSet<Role>(roleList.getChecked());
+        user.setRoles(roles);
         for (Field field : form.getFields()) {
             String fieldName = field.getName();
             if (fieldName.equals("id")) {
@@ -268,9 +278,6 @@ public class UserForm extends LayoutContainer {
             }
             if (fieldName.equals("lastName")) {
                 user.setLastName(field.getRawValue());
-            }
-            if (fieldName.equals("role")) {
-                user.set("role", field.getRawValue());
             }
             if (fieldName.equals("birthday")) {
                 user.setBirthday(new Date());

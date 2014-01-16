@@ -1,6 +1,7 @@
 package com.hubachov.client.service;
 
 import com.extjs.gxt.ui.client.data.BaseListLoadConfig;
+import com.extjs.gxt.ui.client.data.BaseListLoadResult;
 import com.extjs.gxt.ui.client.data.BasePagingLoadConfig;
 import com.extjs.gxt.ui.client.data.BasePagingLoadResult;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -21,4 +22,6 @@ public interface RoleServiceAsync {
     public void create(Role role, AsyncCallback<Void> async);
 
     public void remove(Role role, AsyncCallback<Void> asyncCallback);
+
+    public void getRoles(BaseListLoadConfig loadConfig, AsyncCallback<BaseListLoadResult<Role>> callback);
 }

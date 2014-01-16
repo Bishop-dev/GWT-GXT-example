@@ -1,9 +1,6 @@
 package com.hubachov.dao.impl.jdbc;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,43 +13,34 @@ import com.hubachov.client.model.User;
 
 public class UserDAOJDBC implements UserDAO {
     private static Logger log = Logger.getLogger(UserDAOJDBC.class);
-    private static final String SQL__CREATE_USER = "INSERT INTO User (role_id, user_login, user_password, user_email, " +
-            "user_firstName, user_lastName, user_birthday) values(?,?,?,?,?,?,?)";
     private static final String SQL__SELECT_ALL = "SELECT * FROM User";
     private static final String SQL__FIND_BY_LOGIN = "SELECT * FROM User INNER JOIN ROLE ON User.role_id=Role.role_id AND User.user_login=?";
     private static final String SQL__FIND_BY_EMAIL = "SELECT * FROM User INNER JOIN ROLE ON User.role_id=Role.role_id AND User.user_email=?";
     private static final String SQL__REMOVE_USER = "DELETE FROM User WHERE user_id=?";
     private static final String SQL__UPDATE_USER = "UPDATE User SET role_id=?, user_password=?, user_email=?, " +
             "user_firstName=?, user_lastName=?, user_birthday=? WHERE user_id=?";
+    private static final String CALLABLE__CREATE_USER = "call createUser(?,?,?,?,?,?,?)";
 
     @Override
     public synchronized void create(User user) throws SQLException {
         Connection connection = DBUtil.getInstance().getConnection();
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
+        CallableStatement statement = connection.prepareCall(CALLABLE__CREATE_USER);
+        statement.setString(1, user.getLogin());
+        statement.setString(2, user.getPassword());
+        statement.setString(3, user.getEmail());
+        statement.setString(4, user.getFirstName());
+        statement.setString(5, user.getLastName());
+        statement.setDate(6, new java.sql.Date(user.getBirthday().getTime()));
+        statement.registerOutParameter(7, Types.INTEGER);
         try {
-            statement = connection.prepareStatement(SQL__CREATE_USER,
-                    PreparedStatement.RETURN_GENERATED_KEYS);
-            statement.setLong(1, user.getRole().getId());
-            statement.setString(2, user.getLogin());
-            statement.setString(3, user.getPassword());
-            statement.setString(4, user.getEmail());
-            statement.setString(5, user.getFirstName());
-            statement.setString(6, user.getLastName());
-            statement.setDate(7,
-                    new java.sql.Date(user.getBirthday().getTime()));
-            statement.executeUpdate();
-            resultSet = statement.getGeneratedKeys();
-            if (resultSet.first()) {
-                user.setId(resultSet.getLong(1));
-            } else {
-                log.error("User id was not generated");
-            }
-        } catch (SQLException e) {
+            statement.execute();
+            int id = statement.getInt(7);
+            user.setId(id);
+        } catch (Exception e) {
             log.error("Can't save user: " + user.toString(), e);
             throw e;
         } finally {
-            DBUtil.closeAll(resultSet, null, statement, connection);
+            DBUtil.closeAll(null, statement, null, connection);
         }
     }
 

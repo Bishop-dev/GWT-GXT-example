@@ -181,8 +181,8 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
     @Override
     public void create(User user) throws Exception {
         try {
-            user.setRole(roleDAO.findByName(user.get("role").toString()));
             dao.create(user);
+            roleDAO.saveUserRoles(user);
         } catch (Exception e) {
             log.error("Can't create user#" + user.getLogin(), e);
             throw e;

@@ -23,6 +23,7 @@ public class RoleDAOJDBC implements RoleDAO {
             "FROM ROLE INNER JOIN USER_ROLE ON ROLE.ROLE_ID=USER_ROLE.ROLE_ID GROUP BY ROLE.ROLE_NAME";
     private static final String CALLABLE_GAIN_STATISTIC = "call statistic()";
     private static final String CALLABLE__ENRICH_USER = "call enrichuser(?)";
+    private static final String CALLABLE__SAVE_USER_ROLE = "call saveUserRoles(?,?)";
 
     @Override
     public List<Role> findAll() throws Exception {
@@ -162,6 +163,30 @@ public class RoleDAOJDBC implements RoleDAO {
             throw e;
         } finally {
             DBUtil.closeAll(resultSet, statement, null, connection);
+        }
+    }
+
+    @Override
+    public void saveUserRoles(User user) throws Exception {
+        Connection connection = DBUtil.getInstance().getConnection();
+        CallableStatement statement = connection.prepareCall(CALLABLE__SAVE_USER_ROLE);
+        try {
+            for (Role role : user.getRoles()) {
+                statement.setLong(1, user.getId());
+                statement.setLong(2, role.getId());
+                statement.addBatch();
+            }
+            int[] result = statement.executeBatch();
+            for (Integer code : result) {
+                if (code.equals(Statement.EXECUTE_FAILED)) {
+                    throw new SQLException("Failed to insert row#" + code);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Can't save roles of user#" + user.getId(), e);
+            throw e;
+        } finally {
+            DBUtil.closeAll(null, statement, null, connection);
         }
     }
 

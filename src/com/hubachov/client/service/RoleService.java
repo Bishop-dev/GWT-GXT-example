@@ -1,6 +1,7 @@
 package com.hubachov.client.service;
 
 import com.extjs.gxt.ui.client.data.BaseListLoadConfig;
+import com.extjs.gxt.ui.client.data.BaseListLoadResult;
 import com.extjs.gxt.ui.client.data.BasePagingLoadConfig;
 import com.extjs.gxt.ui.client.data.BasePagingLoadResult;
 import com.google.gwt.user.client.rpc.RemoteService;
@@ -23,4 +24,6 @@ public interface RoleService extends RemoteService {
     public BasePagingLoadResult<Role> loadRoleStatistic(BaseListLoadConfig loadConfig) throws Exception;
 
     public void remove(Role role) throws Exception;
+
+    public BaseListLoadResult<Role> getRoles(BaseListLoadConfig loadConfig) throws Exception;
 }

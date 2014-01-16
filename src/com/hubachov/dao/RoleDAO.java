@@ -6,6 +6,7 @@ import com.hubachov.client.model.User;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface RoleDAO extends Serializable {
 
@@ -22,4 +23,6 @@ public interface RoleDAO extends Serializable {
     public List<Role> getStatistic() throws Exception;
 
     public void enrichUser(User user) throws Exception;
+
+    public void saveUserRoles(User user) throws Exception;
 }
