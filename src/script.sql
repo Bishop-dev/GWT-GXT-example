@@ -98,3 +98,7 @@ create procedure createUser(in u_login varchar(50),in u_password varchar(50),in 
 language sql
 select user_id into id from final table(insert into user (user_id, user_login,user_password,user_email,user_firstname,user_lastname,user_birthday) values
 (next value for user_identity, u_login, u_password, u_email,u_firstname,u_lastname,u_birthday))
+
+create procedure createRole(in r_name varchar(50), out id integer)
+language sql
+select role_id into id from final table(insert into role (role_id, role_name) values(next value for role_identity, r_name))

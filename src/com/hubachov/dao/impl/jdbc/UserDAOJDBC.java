@@ -3,6 +3,7 @@ package com.hubachov.dao.impl.jdbc;
 import com.hubachov.client.model.User;
 import com.hubachov.dao.UserDAO;
 import com.hubachov.dbmanager.DBUtil;
+import com.hubachov.dbmanager.transactional.JdbcConnectionHolder;
 import org.apache.log4j.Logger;
 
 import java.sql.*;
@@ -21,7 +22,7 @@ public class UserDAOJDBC implements UserDAO {
 
     @Override
     public synchronized void create(User user) throws SQLException {
-        Connection connection = DBUtil.getInstance().getConnection();
+        Connection connection = JdbcConnectionHolder.get();
         CallableStatement statement = connection.prepareCall(CALLABLE__CREATE_USER);
         statement.setString(1, user.getLogin());
         statement.setString(2, user.getPassword());
@@ -38,13 +39,13 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Can't save user: " + user.toString(), e);
             throw e;
         } finally {
-            DBUtil.closeAll(null, statement, null, connection);
+            DBUtil.closeAll(null, statement);
         }
     }
 
     @Override
     public synchronized void update(User user) throws SQLException {
-        Connection connection = DBUtil.getInstance().getConnection();
+        Connection connection = JdbcConnectionHolder.get();
         PreparedStatement statement = null;
         try {
             statement = connection.prepareStatement(SQL__UPDATE_USER);
@@ -59,13 +60,13 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Can't update user#" + user.getId(), e);
             throw e;
         } finally {
-            DBUtil.closeAll(null, null, statement, connection);
+            DBUtil.closeAll(null, statement);
         }
     }
 
     @Override
     public synchronized void remove(User user) throws SQLException {
-        Connection connection = DBUtil.getInstance().getConnection();
+        Connection connection = JdbcConnectionHolder.get();
         PreparedStatement statement = null;
         try {
             statement = connection.prepareStatement(SQL__REMOVE_USER);
@@ -75,13 +76,13 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Can't remove user#" + user.getId(), e);
             throw e;
         } finally {
-            DBUtil.closeAll(null, null, statement, connection);
+            DBUtil.closeAll(null, statement);
         }
     }
 
     @Override
     public synchronized List<User> findAll() throws SQLException {
-        Connection connection = DBUtil.getInstance().getConnection();
+        Connection connection = JdbcConnectionHolder.get();
         PreparedStatement statement = null;
         ResultSet resultSet = null;
         List<User> list = new ArrayList<User>();
@@ -95,7 +96,7 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Error in findAll()", e);
             throw e;
         } finally {
-            DBUtil.closeAll(resultSet, null, statement, connection);
+            DBUtil.closeAll(resultSet, statement);
         }
         if (list.isEmpty()) {
             log.trace("There is no users");
@@ -105,7 +106,7 @@ public class UserDAOJDBC implements UserDAO {
 
     @Override
     public synchronized User findByLogin(String login) throws SQLException {
-        Connection connection = DBUtil.getInstance().getConnection();
+        Connection connection = JdbcConnectionHolder.get();
         PreparedStatement statement = null;
         ResultSet resultSet = null;
         try {
@@ -119,7 +120,7 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Can't find user with login \"" + login + "\"", e);
             throw e;
         } finally {
-            DBUtil.closeAll(resultSet, null, statement, connection);
+            DBUtil.closeAll(resultSet, statement);
         }
         log.trace("User \"" + login + "\" doesn't exist");
         return null;
@@ -127,7 +128,7 @@ public class UserDAOJDBC implements UserDAO {
 
     @Override
     public synchronized User findByEmail(String email) throws SQLException {
-        Connection connection = DBUtil.getInstance().getConnection();
+        Connection connection = JdbcConnectionHolder.get();
         PreparedStatement statement = null;
         ResultSet resultSet = null;
         try {
@@ -141,7 +142,7 @@ public class UserDAOJDBC implements UserDAO {
             log.error("Can't find user with email \"" + email + "\"", e);
             throw e;
         } finally {
-            DBUtil.closeAll(resultSet, null, statement, connection);
+            DBUtil.closeAll(resultSet, statement);
         }
         log.trace("User with email \"" + email + "\" doesn't exist");
         return null;
@@ -151,10 +152,6 @@ public class UserDAOJDBC implements UserDAO {
         User user = new User();
         try {
             user.setId(result.getLong("user_id"));
-//            Role role = new Role();
-//            role.setId(result.getLong("role_id"));
-//            role.setName(result.getString("role_name"));
-//            user.setRole(role);
             user.setLogin(result.getString("user_login"));
             user.setPassword(result.getString("user_password"));
             user.setEmail(result.getString("user_email"));

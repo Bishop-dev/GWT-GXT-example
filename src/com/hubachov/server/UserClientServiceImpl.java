@@ -7,24 +7,24 @@ import com.extjs.gxt.ui.client.data.FilterConfig;
 import com.extjs.gxt.ui.client.data.FilterPagingLoadConfig;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.hubachov.client.model.User;
-import com.hubachov.client.service.UserService;
+import com.hubachov.client.service.UserClientService;
 import com.hubachov.dao.RoleDAO;
 import com.hubachov.dao.UserDAO;
 import com.hubachov.dao.impl.jdbc.RoleDAOJDBC;
 import com.hubachov.dao.impl.jdbc.UserDAOJDBC;
+import com.hubachov.server.service.UserServerService;
+import com.hubachov.server.service.impl.jdbc.UserServerServiceJDBC;
 import org.apache.log4j.Logger;
 
 import java.util.*;
 
-public class UserServiceImpl extends RemoteServiceServlet implements UserService {
-    private static final Logger log = Logger.getLogger(UserServiceImpl.class);
-    private UserDAO dao = new UserDAOJDBC();
-    private RoleDAO roleDAO = new RoleDAOJDBC();
+public class UserClientServiceImpl extends RemoteServiceServlet implements UserClientService {
+    private static final Logger log = Logger.getLogger(UserClientServiceImpl.class);
+    private UserServerService userService = new UserServerServiceJDBC();
 
     @Override
     public BasePagingLoadResult<User> getUsers(FilterPagingLoadConfig config) throws Exception {
-        List<User> users = dao.findAll();
-        enrich(users);
+        List<User> users = userService.getUsers();
         int total = users.size();
         sortUsers(config, users);
         filter(config, users);
@@ -32,10 +32,50 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
         return new BasePagingLoadResult<User>(users, config.getOffset(), total);
     }
 
-    private void enrich(List<User> users) throws Exception {
-        for (User user : users) {
-            roleDAO.enrichUser(user);
+    @Override
+    public void create(User user) throws Exception {
+        try {
+            userService.create(user);
+        } catch (Exception e) {
+            log.error("Can't create user#" + user.getLogin(), e);
+            throw e;
         }
+    }
+
+    @Override
+    public void update(User user) throws Exception {
+        try {
+            userService.update(user);
+        } catch (Exception e) {
+            log.error("Can't update user#" + user.getId(), e);
+            throw e;
+        }
+    }
+
+    @Override
+    public void remove(User user) throws Exception {
+        try {
+            userService.remove(user);
+        } catch (Exception e) {
+            log.error("Can't remove user#" + user.getId(), e);
+            throw e;
+        }
+    }
+
+    //TODO check
+    @Override
+    public boolean checkLogin(String login) throws Exception {
+        try {
+            return false;
+        } catch (Exception e) {
+            log.error("Can't check login " + login, e);
+            throw e;
+        }
+    }
+
+    @Override
+    public BasePagingLoadResult<User> loadUsers(BaseListLoadConfig loadConfig) throws Exception {
+        return new BasePagingLoadResult<User>(userService.getUsers());
     }
 
     private void filter(FilterPagingLoadConfig config, List<User> sorted) {
@@ -157,52 +197,6 @@ public class UserServiceImpl extends RemoteServiceServlet implements UserService
         }
     }
 
-    @Override
-    public void update(User user) throws Exception {
-        try {
-            roleDAO.resetRoles(user);
-            dao.update(user);
-        } catch (Exception e) {
-            log.error("Can't update user#" + user.getId(), e);
-            throw e;
-        }
-    }
-
-    @Override
-    public void remove(User user) throws Exception {
-        try {
-            dao.remove(user);
-        } catch (Exception e) {
-            log.error("Can't remove user#" + user.getId(), e);
-            throw e;
-        }
-    }
-
-    @Override
-    public void create(User user) throws Exception {
-        try {
-            dao.create(user);
-            roleDAO.saveUserRoles(user);
-        } catch (Exception e) {
-            log.error("Can't create user#" + user.getLogin(), e);
-            throw e;
-        }
-    }
-
-    @Override
-    public boolean checkLogin(String login) throws Exception {
-        try {
-            return dao.findByLogin(login) == null;
-        } catch (Exception e) {
-            log.error("Can't check login " + login, e);
-            throw e;
-        }
-    }
-
-    @Override
-    public BasePagingLoadResult<User> loadUsers(BaseListLoadConfig loadConfig) throws Exception {
-        return new BasePagingLoadResult<User>(dao.findAll());
-    }
 
     private void sortUsers(FilterPagingLoadConfig config, List<User> users) {
         final Style.SortDir direction = config.getSortDir();

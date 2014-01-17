@@ -6,18 +6,20 @@ import com.extjs.gxt.ui.client.data.BasePagingLoadConfig;
 import com.extjs.gxt.ui.client.data.BasePagingLoadResult;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.hubachov.client.model.Role;
-import com.hubachov.client.service.RoleService;
+import com.hubachov.client.service.RoleClientService;
 import com.hubachov.dao.RoleDAO;
 import com.hubachov.dao.impl.jdbc.RoleDAOJDBC;
+import com.hubachov.server.service.RoleServerService;
+import com.hubachov.server.service.impl.jdbc.RoleServerServiceJDBC;
 
 import java.util.*;
 
-public class RoleServiceImpl extends RemoteServiceServlet implements RoleService {
-    private RoleDAO dao = new RoleDAOJDBC();
+public class RoleClientServiceImpl extends RemoteServiceServlet implements RoleClientService {
+    private RoleServerService roleServerService = new RoleServerServiceJDBC();
 
     @Override
     public BasePagingLoadResult<Role> getRoles(BasePagingLoadConfig config) throws Exception {
-        List<Role> roles = dao.findAll();
+        List<Role> roles = loadRoles();
         if (config.getSortInfo().getSortField() != null) {
             final String sortField = config.getSortInfo().getSortField();
             Collections.sort(roles, new Comparator<Role>() {
@@ -44,32 +46,36 @@ public class RoleServiceImpl extends RemoteServiceServlet implements RoleService
 
     @Override
     public void update(Role role) throws Exception {
-        dao.update(role);
+        roleServerService.update(role);
     }
 
     @Override
     public void create(Role role) throws Exception {
-        dao.create(role);
+        roleServerService.create(role);
     }
 
     @Override
     public BasePagingLoadResult<Role> loadRoles(BaseListLoadConfig loadConfig) throws Exception {
-        return new BasePagingLoadResult<Role>(dao.findAll());
+        return new BasePagingLoadResult<Role>(loadRoles());
     }
 
     @Override
     public BasePagingLoadResult<Role> loadRoleStatistic(BaseListLoadConfig loadConfig) throws Exception {
-        return new BasePagingLoadResult<Role>(dao.getStatistic());
+        return new BasePagingLoadResult<Role>(roleServerService.loadStatistic());
     }
 
     @Override
     public void remove(Role role) throws Exception {
-        dao.remove(role);
+        roleServerService.remove(role);
     }
 
     @Override
     public BaseListLoadResult<Role> getRoles(BaseListLoadConfig loadConfig) throws Exception {
-        return new BaseListLoadResult<Role>(dao.findAll());
+        return new BaseListLoadResult<Role>(loadRoles());
+    }
+
+    private List<Role> loadRoles() throws Exception {
+        return roleServerService.getRoles();
     }
 
 }

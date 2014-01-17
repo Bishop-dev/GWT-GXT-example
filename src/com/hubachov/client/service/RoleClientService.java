@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @RemoteServiceRelativePath(value = "RoleService")
-public interface RoleService extends RemoteService {
+public interface RoleClientService extends RemoteService {
     public BasePagingLoadResult<Role> getRoles(BasePagingLoadConfig config) throws Exception;
 
     public void update(Role role) throws Exception;

@@ -5,14 +5,11 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.hubachov.client.element.MainPage;
-import com.hubachov.client.service.RoleService;
-import com.hubachov.client.service.RoleServiceAsync;
-import com.hubachov.client.service.UserService;
-import com.hubachov.client.service.UserServiceAsync;
+import com.hubachov.client.service.*;
 
 public class TaskEntryPoint implements EntryPoint {
-    public static UserServiceAsync userService = (UserServiceAsync) GWT.create(UserService.class);
-    public static RoleServiceAsync roleService = (RoleServiceAsync) GWT.create(RoleService.class);
+    public static UserClientServiceAsync userService = (UserClientServiceAsync) GWT.create(UserClientService.class);
+    public static RoleClientServiceAsync roleService = (RoleClientServiceAsync) GWT.create(RoleClientService.class);
 
     @Override
     public void onModuleLoad() {

@@ -9,7 +9,7 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 import com.hubachov.client.model.User;
 
 @RemoteServiceRelativePath(value = "UserService")
-public interface UserService extends RemoteService {
+public interface UserClientService extends RemoteService {
     public BasePagingLoadResult<User> getUsers(FilterPagingLoadConfig config) throws Exception;
 
     public void update(User user) throws Exception;

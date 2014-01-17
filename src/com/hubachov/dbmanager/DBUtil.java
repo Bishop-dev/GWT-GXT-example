@@ -76,20 +76,13 @@ public class DBUtil {
         dataSource = new PoolingDataSource(poolableFactory.getPool());
     }
 
-    public static synchronized void closeAll(ResultSet resultSet, CallableStatement callableStatement,
-                                             PreparedStatement preparedStatement, Connection connection) {
+    public static synchronized void closeAll(ResultSet resultSet, Statement statement) {
         try {
             if (resultSet != null) {
                 resultSet.close();
             }
-            if (callableStatement != null) {
-                callableStatement.close();
-            }
-            if (preparedStatement != null) {
-                preparedStatement.close();
-            }
-            if (connection != null) {
-                connection.close();
+            if (statement != null) {
+                statement.close();
             }
         } catch (SQLException e) {
             log.error("Can't close DB objects", e);

@@ -9,9 +9,9 @@
 
     <inherits name="com.extjs.gxt.charts.Chart"/>
 
-    <servlet path="/roleService" class="com.hubachov.server.RoleServiceImpl"/>
+    <servlet path="/roleService" class="com.hubachov.server.RoleClientServiceImpl"/>
 
-    <servlet path="/userService" class="com.hubachov.server.UserServiceImpl"/>
+    <servlet path="/userService" class="com.hubachov.server.UserClientServiceImpl"/>
 
     <entry-point class='com.hubachov.client.TaskEntryPoint'/>
 

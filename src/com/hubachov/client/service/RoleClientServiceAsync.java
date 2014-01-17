@@ -10,7 +10,7 @@ import com.hubachov.client.model.Role;
 import java.util.List;
 import java.util.Map;
 
-public interface RoleServiceAsync {
+public interface RoleClientServiceAsync {
     public void getRoles(BasePagingLoadConfig config, AsyncCallback<BasePagingLoadResult<Role>> async);
 
     public void update(Role role, AsyncCallback<Void> asyncCallback);
